@@ -1,75 +1,35 @@
-# Nuxt Minimal Starter
+![nuxt-shadcn-dashboard-social-card](https://nuxt-shadcn-dashboard.vercel.app/social-card.png)
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+# Nuxt Shadcn UnoCSS - Dashboard
 
-## Setup
+[![built with nuxt][nuxt-src]][nuxt-href]
 
-Make sure to install dependencies:
+- [Live demo](https://nuxt-shadcn-dashboard.vercel.app)
+- [Component Documentation](https://shadcn-vue.com/docs/introduction)
 
-```bash
-# npm
-npm install
+## Quick Start
 
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+```bash [Terminal]
+npx degit dianprata/nuxt-shadcn-dashboard my-dashboard-app
+cd my-dashboard-app
+pnpm i # If you don't have pnpm installed, run: npm install -g pnpm
 ```
 
-## Development Server
+## Contributing
 
-Start the development server on `http://localhost:3000`:
+1. Clone this repository.
+2. Install dependencies `pnpm install`.
+3. Use `pnpm run dev` to start dev server.
 
-```bash
-# npm
-npm run dev
+## Credits
 
-# pnpm
-pnpm dev
+- [Nuxt.js](https://nuxtjs.org/)
+- [Shadcn Vue](https://shadcn-vue.com/)
+- [UnoCSS](https://unocss.com/)
 
-# yarn
-yarn dev
+## License
 
-# bun
-bun run dev
-```
+MIT
 
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+[nuxt-src]: https://img.shields.io/badge/Built%20With%20Nuxt-18181B?logo=nuxt.js
+[nuxt-href]: https://nuxt.com/
