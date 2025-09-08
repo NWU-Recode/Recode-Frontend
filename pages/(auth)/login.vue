@@ -12,7 +12,7 @@ definePageMeta({
           Welcome back
         </h1>
         <p class="text-balance text-sm text-muted-foreground">
-          Login with your Apple or Google account
+          Login with your university gmail account
         </p>
       </div>
       <AuthSignIn />

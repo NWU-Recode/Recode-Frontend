@@ -34,32 +34,6 @@ function handleChangeDirection(dir: 'ltr' | 'rtl') {
         <div class="space-y-3">
           <Badge>Layout</Badge>
           <div class="space-y-1.5">
-            <Label>Navbar Type</Label>
-            <div class="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'sidebar' }"
-                @click="sidebar.variant = 'sidebar'"
-              >
-                Sidebar
-              </Button>
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'floating' }"
-                @click="sidebar.variant = 'floating'"
-              >
-                Floating
-              </Button>
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'inset' }"
-                @click="sidebar.variant = 'inset'"
-              >
-                Inset
-              </Button>
-            </div>
-          </div>
-          <div class="space-y-1.5">
             <Label>Direction</Label>
             <div class="grid grid-cols-2 gap-2">
               <Button
@@ -102,32 +76,6 @@ function handleChangeDirection(dir: 'ltr' | 'rtl') {
         <Separator />
         <div class="space-y-3">
           <Badge>Layout</Badge>
-          <div class="space-y-1.5">
-            <Label>Navbar Type</Label>
-            <div class="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'sidebar' }"
-                @click="sidebar.variant = 'sidebar'"
-              >
-                Sidebar
-              </Button>
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'floating' }"
-                @click="sidebar.variant = 'floating'"
-              >
-                Floating
-              </Button>
-              <Button
-                variant="outline"
-                :class="{ 'border-primary border-2': sidebar.variant === 'inset' }"
-                @click="sidebar.variant = 'inset'"
-              >
-                Inset
-              </Button>
-            </div>
-          </div>
           <div class="space-y-1.5">
             <Label>Direction</Label>
             <div class="grid grid-cols-2 gap-2">

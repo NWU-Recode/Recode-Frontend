@@ -67,39 +67,6 @@ const colorMode = useColorMode()
 <template>
   <div class="grid gap-6">
     <div class="space-y-1.5">
-      <Label>Color</Label>
-      <div class="grid grid-cols-3 gap-2">
-        <template v-for="color in allColors" :key="color">
-          <Button
-            class="justify-start gap-2"
-            variant="outline"
-            :class="{ 'border-primary border-2': theme === color }"
-            @click="setTheme(color)"
-          >
-            <span class="h-5 w-5 flex items-center justify-center rounded-full" :style="{ backgroundColor: backgroundColor(color) }">
-              <Icon v-if="theme === color" name="i-radix-icons-check" size="16" class="text-white" />
-            </span>
-            <span class="text-xs capitalize">{{ color }}</span>
-          </Button>
-        </template>
-      </div>
-    </div>
-    <div class="space-y-1.5">
-      <Label>Radius</Label>
-      <div class="grid grid-cols-5 gap-2">
-        <template v-for="r in RADII" :key="r">
-          <Button
-            class="justify-center gap-2"
-            variant="outline"
-            :class="{ 'border-primary border-2': radius === r }"
-            @click="setRadius(r)"
-          >
-            <span class="text-xs capitalize">{{ r }}</span>
-          </Button>
-        </template>
-      </div>
-    </div>
-    <div class="space-y-1.5">
       <Label>Theme</Label>
       <div class="grid grid-cols-3 gap-2">
         <Button

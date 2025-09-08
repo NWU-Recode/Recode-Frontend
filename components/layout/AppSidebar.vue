@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { NavGroup, NavLink, NavSectionTitle } from '~/types/nav'
-import { navMenu, navMenuBottom } from '~/constants/menus'
+import { useAuth } from '~/composables/useAuth'
+import {getNavMenu} from "~/constants/menus";
+
+const { user } = useAuth()
+const { sidebar } = useAppSettings()
 
 function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): any {
   if ('children' in item)
@@ -9,17 +13,7 @@ function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): an
   return resolveComponent('LayoutSidebarNavLink')
 }
 
-const user: {
-  name: string
-  email: string
-  avatar: string
-} = {
-  name: 'Dian Pratama',
-  email: 'dianpratama2@gmail.com',
-  avatar: '/avatars/avatartion.png',
-}
-
-const { sidebar } = useAppSettings()
+const navMenu = computed(() => getNavMenu(user.value))
 </script>
 
 <template>
@@ -27,25 +21,36 @@ const { sidebar } = useAppSettings()
     <SidebarHeader>
       <img
           class="w-24 h-24 mx-auto mt-3"
-          src="/public/logo.svg"
+          src="/logo.svg"
           alt="Logo"
       />
     </SidebarHeader>
+
     <SidebarContent>
       <SidebarGroup v-for="(nav, indexGroup) in navMenu" :key="indexGroup">
         <SidebarGroupLabel v-if="nav.heading">
           {{ nav.heading }}
         </SidebarGroupLabel>
-        <component :is="resolveNavItemComponent(item)" v-for="(item, index) in nav.items" :key="index" :item="item" />
+        <component
+            v-for="(item, index) in nav.items"
+            :is="resolveNavItemComponent(item)"
+            :key="index"
+            :item="item"
+        />
       </SidebarGroup>
     </SidebarContent>
+
     <SidebarFooter>
-      <LayoutSidebarNavFooter :user="user" />
+      <LayoutSidebarNavFooter
+          v-if="user"
+          :user="{
+          name: user.full_name,
+          email: user.email,
+          avatar: user.avatar_url || '/avatars/default.png'
+        }"
+      />
     </SidebarFooter>
+
     <SidebarRail />
   </Sidebar>
 </template>
-
-<style scoped>
-
-</style>
