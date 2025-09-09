@@ -9,7 +9,7 @@ export interface User {
   role: 'student' | 'lecturer' | 'admin' | string // extend as needed
 }
 
-const user = ref<User | null>(null)
+const user = ref<User | null | undefined>(undefined)
 const loading = ref(false)
 const error = ref<unknown | null>(null)
 
@@ -28,23 +28,36 @@ export function useAuth() {
     error.value = null
 
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token)
-        throw new Error('No access token found')
+      let token = localStorage.getItem('access_token')
+
+      // If no token, try refresh
+      if (!token) {
+        const refreshToken = localStorage.getItem('refresh_token')
+        if (!refreshToken) throw new Error('No token available')
+
+        const refreshResponse = await $fetch<{ access_token: string }>(
+            `${config.public.apiBase}/auth/refresh`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${refreshToken}`,
+              },
+            }
+        )
+
+        token = refreshResponse.access_token
+        localStorage.setItem('access_token', token)
+      }
 
       user.value = await $fetch<User>(`${config.public.apiBase}/profiles/me`, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
-    }
-    catch (err) {
+    } catch (err) {
       console.error('Error fetching user:', err)
       error.value = err
       user.value = null
-    }
-    finally {
+    } finally {
       loading.value = false
     }
   }
