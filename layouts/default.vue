@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+
+const { fetchUser } = useAuth()
+
+onMounted(async () => {
+  await fetchUser()
+})
 </script>
 
 <template>
