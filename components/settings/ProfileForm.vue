@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { cn } from '@/lib/utils'
 import { toTypedSchema } from '@vee-validate/zod'
 import { FieldArray, useForm } from 'vee-validate'
 import { h, ref } from 'vue'
 import * as z from 'zod'
+import { cn } from '@/lib/utils'
 import { toast } from '~/components/ui/toast'
 
 const verifiedEmails = ref(['m@example.com', 'm@google.com', 'm@support.com'])

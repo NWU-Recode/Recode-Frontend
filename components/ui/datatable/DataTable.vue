@@ -7,7 +7,6 @@ import type {
 } from '@tanstack/vue-table'
 
 import type { Task } from '../data/schema'
-import { valueUpdater } from '@/lib/utils'
 import {
   FlexRender,
   getCoreRowModel,
@@ -18,6 +17,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
+import { valueUpdater } from '@/lib/utils'
 import DataTablePagination from './DataTablePagination.vue'
 import DataTableToolbar from './DataTableToolbar.vue'
 

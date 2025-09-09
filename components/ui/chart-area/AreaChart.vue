@@ -2,11 +2,11 @@
 import type { BulletLegendItemInterface } from '@unovis/ts'
 import type { Component } from 'vue'
 import type { BaseChartProps } from '.'
-import { cn } from '@/lib/utils'
 import { Area, Axis, CurveType, Line } from '@unovis/ts'
 import { VisArea, VisAxis, VisLine, VisXYContainer } from '@unovis/vue'
 import { useMounted } from '@vueuse/core'
 import { computed, ref } from 'vue'
+import { cn } from '@/lib/utils'
 import { ChartCrosshair, ChartLegend, defaultColors } from '../chart'
 
 const props = withDefaults(defineProps<BaseChartProps<T> & {

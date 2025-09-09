@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter, useRuntimeConfig } from '#app'
-import PasswordInput from '~/components/PasswordInput.vue'
 import { Loader2 } from 'lucide-vue-next'
+import { ref } from 'vue'
+import ForgotPasswordModal from '~/components/auth/ForgotPasswordModal.vue'
+import PasswordInput from '~/components/PasswordInput.vue'
 import { useAuth } from '~/composables/useAuth'
-import { Icon } from '@iconify/vue'
-import ForgotPasswordModal from "~/components/auth/ForgotPasswordModal.vue";
 
 // Form state
 const email = ref('')
@@ -30,12 +29,12 @@ async function onSubmit(event: Event) {
 
   try {
     // Call login endpoint
-    const response = await $fetch<{ access_token: string; refresh_token: string }>(
-        `${config.public.apiBase}/auth/login`,
-        {
-          method: 'POST',
-          body: { email: email.value, password: password.value },
-        }
+    const response = await $fetch<{ access_token: string, refresh_token: string }>(
+      `${config.public.apiBase}/auth/login`,
+      {
+        method: 'POST',
+        body: { email: email.value, password: password.value },
+      },
     )
 
     // Store tokens for API requests
@@ -46,38 +45,40 @@ async function onSubmit(event: Event) {
     const user = await auth.fetchUser()
 
     // Redirect based on role
-    if (user?.role === 'admin') router.push('/admin')
+    if (user?.role === 'admin')
+      router.push('/admin')
     else router.push('/')
-  } catch (err: any) {
+  }
+  catch (err: any) {
     console.error('Login error:', err)
-    errors.value =
-        err?.data?.message ||
-        err?.data?.detail ||
-        'Login failed. Please check your credentials.'
-  } finally {
+    errors.value
+      = err?.data?.message
+        || err?.data?.detail
+        || 'Login failed. Please check your credentials.'
+  }
+  finally {
     isLoading.value = false
   }
 }
-
 </script>
 
 <template>
-  <div class="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-    <div class="w-full max-w-md space-y-6">
+  <div class="flex items-center justify-center px-4 py-8 lg:px-8 sm:px-6">
+    <div class="max-w-md w-full space-y-6">
       <form class="grid gap-6" @submit="onSubmit">
         <!-- Email -->
         <div class="grid gap-2">
           <label for="email">Email</label>
           <Input
-              id="email"
-              v-model="email"
-              type="email"
-              placeholder="name@example.com"
-              :disabled="isLoading"
-              auto-capitalize="none"
-              auto-complete="email"
-              auto-correct="off"
-              required
+            id="email"
+            v-model="email"
+            type="email"
+            placeholder="name@example.com"
+            :disabled="isLoading"
+            auto-capitalize="none"
+            auto-complete="email"
+            auto-correct="off"
+            required
           />
         </div>
 
@@ -91,13 +92,15 @@ async function onSubmit(event: Event) {
         </div>
 
         <!-- Error message -->
-        <p v-if="errors" class="text-red-500 text-sm">{{ errors }}</p>
+        <p v-if="errors" class="text-sm text-red-500">
+          {{ errors }}
+        </p>
 
         <!-- Submit -->
         <Button
-            type="submit"
-            class="w-full flex items-center justify-center gap-2"
-            :disabled="isLoading"
+          type="submit"
+          class="w-full flex items-center justify-center gap-2"
+          :disabled="isLoading"
         >
           <Loader2 v-if="isLoading" class="h-4 w-4 animate-spin" />
           Login
@@ -107,7 +110,9 @@ async function onSubmit(event: Event) {
       <!-- Register link -->
       <div class="mt-4 text-center text-sm text-muted-foreground">
         Don't have an account?
-        <NuxtLink to="/register" class="underline">Sign up</NuxtLink>
+        <NuxtLink to="/register" class="underline">
+          Sign up
+        </NuxtLink>
       </div>
     </div>
   </div>

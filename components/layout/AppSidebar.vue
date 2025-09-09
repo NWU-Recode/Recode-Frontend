@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NavGroup, NavLink, NavSectionTitle } from '~/types/nav'
 import { useAuth } from '~/composables/useAuth'
-import {getNavMenu} from "~/constants/menus";
+import { getNavMenu } from '~/constants/menus'
 
 const { user } = useAuth()
 const { sidebar } = useAppSettings()
@@ -20,10 +20,10 @@ const navMenu = computed(() => getNavMenu(user.value))
   <Sidebar :collapsible="sidebar.collapsible" :side="sidebar.side" :variant="sidebar.variant">
     <SidebarHeader>
       <img
-          class="w-24 h-24 mx-auto mt-3"
-          src="/logo.svg"
-          alt="Logo"
-      />
+        class="mx-auto mt-3 h-24 w-24"
+        src="/logo.svg"
+        alt="Logo"
+      >
     </SidebarHeader>
 
     <SidebarContent>
@@ -32,21 +32,21 @@ const navMenu = computed(() => getNavMenu(user.value))
           {{ nav.heading }}
         </SidebarGroupLabel>
         <component
-            v-for="(item, index) in nav.items"
-            :is="resolveNavItemComponent(item)"
-            :key="index"
-            :item="item"
+          :is="resolveNavItemComponent(item)"
+          v-for="(item, index) in nav.items"
+          :key="index"
+          :item="item"
         />
       </SidebarGroup>
     </SidebarContent>
 
     <SidebarFooter>
       <LayoutSidebarNavFooter
-          v-if="user"
-          :user="{
+        v-if="user"
+        :user="{
           name: user.full_name,
           email: user.email,
-          avatar: user.avatar_url || '/avatars/default.png'
+          avatar: user.avatar_url || '/avatars/default.png',
         }"
       />
     </SidebarFooter>

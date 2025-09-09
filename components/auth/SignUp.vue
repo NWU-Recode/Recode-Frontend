@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter, useRuntimeConfig } from '#app'
-import PasswordInput from '~/components/PasswordInput.vue'
 import { Loader2 } from 'lucide-vue-next'
-import { useAuth } from '~/composables/useAuth'
+import { ref } from 'vue'
 import { cn } from '@/lib/utils'
-import { Icon } from '@iconify/vue'
+import PasswordInput from '~/components/PasswordInput.vue'
+import { useAuth } from '~/composables/useAuth'
 
 // Form state
 const full_name = ref('')
@@ -57,14 +56,17 @@ async function onSubmit(event: Event) {
 
     // Redirect to dashboard
     router.push('/')
-  } catch (err: any) {
+  }
+  catch (err: any) {
     console.error('Registration error:', err)
     if (err?.data?.detail) {
       errors.value.general = err.data.detail
-    } else {
+    }
+    else {
       errors.value.general = 'An unexpected error occurred'
     }
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -78,14 +80,14 @@ async function onSubmit(event: Event) {
         <div class="grid gap-2">
           <Label for="full_name">Name</Label>
           <Input
-              id="full_name"
-              v-model="full_name"
-              placeholder="Enter your name"
-              type="text"
-              auto-capitalize="none"
-              auto-complete="name"
-              auto-correct="off"
-              :disabled="isLoading"
+            id="full_name"
+            v-model="full_name"
+            placeholder="Enter your name"
+            type="text"
+            auto-capitalize="none"
+            auto-complete="name"
+            auto-correct="off"
+            :disabled="isLoading"
           />
         </div>
 
@@ -93,14 +95,14 @@ async function onSubmit(event: Event) {
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input
-              id="email"
-              v-model="email"
-              placeholder="name@example.com"
-              type="email"
-              auto-capitalize="none"
-              auto-complete="email"
-              auto-correct="off"
-              :disabled="isLoading"
+            id="email"
+            v-model="email"
+            placeholder="name@example.com"
+            type="email"
+            auto-capitalize="none"
+            auto-complete="email"
+            auto-correct="off"
+            :disabled="isLoading"
           />
         </div>
 
@@ -108,27 +110,27 @@ async function onSubmit(event: Event) {
         <div class="grid gap-2">
           <Label for="password">Student number</Label>
           <Input
-              id="student_number"
-              v-model="student_number"
-              placeholder="Enter your student number"
-              type="number"
-              auto-capitalize="none"
-              auto-complete="off"
-              :disabled="isLoading"
+            id="student_number"
+            v-model="student_number"
+            placeholder="Enter your student number"
+            type="number"
+            auto-capitalize="none"
+            auto-complete="off"
+            :disabled="isLoading"
           />
         </div>
 
         <!-- Password -->
         <div class="grid gap-2">
           <Label for="password">Password</Label>
-          <PasswordInput v-model="password" id="password" />
+          <PasswordInput id="password" v-model="password" />
         </div>
 
         <!-- Confirm Password -->
         <div class="grid gap-2">
           <Label for="confirm-password">Confirm Password</Label>
-          <PasswordInput v-model="confirmPassword" id="confirm-password" />
-          <p v-if="errors.confirmPassword" class="text-red-500 text-sm">
+          <PasswordInput id="confirm-password" v-model="confirmPassword" />
+          <p v-if="errors.confirmPassword" class="text-sm text-red-500">
             {{ errors.confirmPassword }}
           </p>
         </div>
@@ -139,7 +141,7 @@ async function onSubmit(event: Event) {
           Sign Up with Email
         </Button>
 
-        <p v-if="errors.general" class="text-red-500 text-sm mt-2">
+        <p v-if="errors.general" class="mt-2 text-sm text-red-500">
           {{ errors.general }}
         </p>
       </div>

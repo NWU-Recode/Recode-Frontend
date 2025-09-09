@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { toggleVariants } from '@/components/ui/toggle'
 import type { VariantProps } from 'class-variance-authority'
 import type { ToggleGroupRootEmits, ToggleGroupRootProps } from 'radix-vue'
 import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import type { toggleVariants } from '@/components/ui/toggle'
 import { ToggleGroupRoot, useForwardPropsEmits } from 'radix-vue'
 import { computed, provide } from 'vue'
+import { cn } from '@/lib/utils'
 
 type ToggleGroupVariants = VariantProps<typeof toggleVariants>
 

@@ -3,9 +3,9 @@ import ForgotPassword from '@/components/auth/ForgotPassword.vue'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog'
 
 const open = ref(false)
@@ -26,9 +26,9 @@ const open = ref(false)
 
     <!-- Trigger -->
     <button
-        type="button"
-        class="ml-auto inline-block text-sm underline"
-        @click="open = true"
+      type="button"
+      class="ml-auto inline-block text-sm underline"
+      @click="open = true"
     >
       Forgot your password?
     </button>

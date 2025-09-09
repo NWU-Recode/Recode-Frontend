@@ -29,7 +29,7 @@ function handleSelectLink(link: string) {
     <Button variant="outline" size="sm" class="text-xs" @click="openCommand = !openCommand">
       <Icon name="i-lucide-search" />
       <span class="font-normal group-data-[collapsible=icon]:hidden">Search documentation</span>
-      <div class="ml-auto flex items-center space-x-0.5 group-data-[collapsible=icon]:hidden">
+      <div class="ml-auto flex items-center group-data-[collapsible=icon]:hidden space-x-0.5">
         <BaseKbd>{{ metaSymbol }}</BaseKbd>
         <BaseKbd>K</BaseKbd>
       </div>

@@ -2,8 +2,8 @@
 import type { PrimitiveProps } from 'radix-vue'
 import type { HTMLAttributes } from 'vue'
 import type { SidebarMenuButtonVariants } from '.'
-import { cn } from '@/lib/utils'
 import { Primitive } from 'radix-vue'
+import { cn } from '@/lib/utils'
 import { sidebarMenuButtonVariants } from '.'
 
 export interface SidebarMenuButtonProps extends PrimitiveProps {

@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { CalendarNextProps } from 'radix-vue'
 import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
 import { CalendarNext, useForwardProps } from 'radix-vue'
 import { computed } from 'vue'
+import { cn } from '@/lib/utils'
 import { buttonVariants } from '../button'
 
 const props = defineProps<CalendarNextProps & { class?: HTMLAttributes['class'] }>()
