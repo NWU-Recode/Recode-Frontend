@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { cn } from '@/lib/utils'
 import { NumberFieldInput } from 'radix-vue'
+import { cn } from '@/lib/utils'
 </script>
 
 <template>

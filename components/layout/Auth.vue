@@ -6,20 +6,20 @@ defineProps<{
 
 <template>
   <div
-      class="relative flex flex-col lg:flex-row items-center justify-center px-4 h-dvh lg:max-w-none lg:px-0"
-      :class="{ 'lg:flex-row-reverse': reverse }"
+    class="relative flex flex-col items-center justify-center px-4 h-dvh lg:max-w-none lg:flex-row lg:px-0"
+    :class="{ 'lg:flex-row-reverse': reverse }"
   >
     <!-- Logo / Image -->
-    <div class="relative z-20 lg:mb-0 lg:mr-6 lg:ml-6 flex justify-center">
+    <div class="relative z-20 flex justify-center lg:mb-0 lg:ml-6 lg:mr-6">
       <img
-          class="w-48 h-48 sm:w-72 sm:h-72 md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px]"
-          src="/logo.svg"
-          alt="Logo"
-      />
+        class="h-48 w-48 lg:h-[600px] lg:w-[600px] md:h-[400px] md:w-[400px] sm:h-72 sm:w-72"
+        src="/logo.svg"
+        alt="Logo"
+      >
     </div>
 
     <!-- Form / Slot -->
-    <div class="mx-auto flex-1 lg:p-8 w-full max-w-md">
+    <div class="mx-auto max-w-md w-full flex-1 lg:p-8">
       <slot />
     </div>
   </div>

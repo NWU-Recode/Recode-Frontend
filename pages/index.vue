@@ -1,11 +1,11 @@
 <script setup>
 import DashboardLayout from '~/components/dashboard/DashboardLayout.vue'
+import L_Analytics from '~/components/dashboard/lecturer/L_Analytics.vue'
+import L_Overview from '~/components/dashboard/lecturer/L_Overview.vue'
+import Uploads from '~/components/dashboard/lecturer/Uploads.vue'
+import S_Analytics from '~/components/dashboard/student/S_Analytics.vue'
+import S_Overview from '~/components/dashboard/student/S_Overview.vue'
 import { useAuth } from '~/composables/useAuth'
-import S_Overview from "~/components/dashboard/student/S_Overview.vue";
-import L_Overview from "~/components/dashboard/lecturer/L_Overview.vue";
-import Uploads from "~/components/dashboard/lecturer/Uploads.vue";
-import S_Analytics from "~/components/dashboard/student/S_Analytics.vue";
-import L_Analytics from "~/components/dashboard/lecturer/L_Analytics.vue";
 
 const { user } = useAuth()
 </script>
@@ -27,4 +27,3 @@ const { user } = useAuth()
     </div>
   </DashboardLayout>
 </template>
-

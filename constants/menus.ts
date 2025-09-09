@@ -1,7 +1,8 @@
 import type { NavMenu, NavMenuItems } from '~/types/nav'
 
 export function getNavMenu(user: any): NavMenu[] {
-  if (!user) return []
+  if (!user)
+    return []
 
   switch (user.role) {
     case 'student':
@@ -25,7 +26,7 @@ export function getNavMenu(user: any): NavMenu[] {
         },
       ]
 
-    /*
+      /*
     case 'admin':
       return [
         {

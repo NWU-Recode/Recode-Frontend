@@ -1,14 +1,15 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuth } from '~/composables/useAuth'
+import { computed, ref } from 'vue'
 import NavTabs from '~/components/ui/tabs/NavTabs.vue'
+import { useAuth } from '~/composables/useAuth'
 
 const { user } = useAuth()
 
 const activeTab = ref('overview')
 
 const tabOptions = computed(() => {
-  if (!user.value) return []
+  if (!user.value)
+    return []
 
   if (user.value.role === 'student') {
     return [
@@ -30,7 +31,7 @@ const tabOptions = computed(() => {
 </script>
 
 <template>
-  <div class="w-full flex flex-end gap-4">
+  <div class="flex-end w-full flex gap-4">
     <NavTabs v-model="activeTab" :options="tabOptions" direction="horizontal" />
 
     <div class="mt-4">

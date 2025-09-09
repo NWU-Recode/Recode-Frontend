@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { cn } from '@/lib/utils'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { h } from 'vue'
 import * as z from 'zod'
+import { cn } from '@/lib/utils'
 import { buttonVariants } from '~/components/ui/button'
 import { toast } from '~/components/ui/toast'
 

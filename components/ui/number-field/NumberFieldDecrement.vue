@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { NumberFieldDecrementProps } from 'radix-vue'
 import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
 import { Minus } from 'lucide-vue-next'
 import { NumberFieldDecrement, useForwardProps } from 'radix-vue'
 import { computed } from 'vue'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<NumberFieldDecrementProps & { class?: HTMLAttributes['class'] }>()
 
