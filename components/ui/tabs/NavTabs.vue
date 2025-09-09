@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue';
-import {Tooltip} from "@/components/ui/tooltip";
+import { computed } from 'vue';
+import { Tooltip } from "@/components/ui/tooltip";
 
 const props = defineProps({
   options: Array,
@@ -8,30 +8,25 @@ const props = defineProps({
     type: String,
     default: 'horizontal',
   },
+  modelValue: [String, Number],
 });
 
 const emit = defineEmits(['update:modelValue', 'click', 'change']);
 
-const model = defineModel()
-
 const clickOption = (option) => {
-  emit('update:modelValue', option);
-  emit('click', option);
-
-  if (option !== model.value) {
+  if (option !== props.modelValue) {
+    emit('update:modelValue', option);
     emit('change', option);
-    model.value = option;
   }
+  emit('click', option);
 };
 
 const __options = computed(() => {
-  return props.options.map((option) => ({
+  return props.options.map(option => ({
     ...option,
     value: option.value ?? option.name.toLowerCase(),
     visible: option.visible ?? true,
-    selected() {
-      return this.value === props.modelValue;
-    },
+    selected: option.value === props.modelValue || option.name.toLowerCase() === props.modelValue
   }));
 });
 </script>
@@ -44,18 +39,19 @@ const __options = computed(() => {
           class="relative"
           :data-tooltip-target="option.tooltip && 'option-' + option.value"
       >
-        <Button
+        <button
             @click="clickOption(option.value)"
-            :active="option.selected()"
-            class="text-sm px-3 py-2 rounded-md transition-all duration-150 w-[150px] text-center"
+            class="h-10 px-3 py-2 rounded-md inline-flex items-center transition-all duration-150"
             :class="[
-                        option.selected()
-                          ? 'bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white font-semibold'
-                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300',
-                    ]"
+            option.selected
+              ? 'bg-purple-200 text-purple-600 font-semibold'
+              : 'text-neutral-700 dark:text-neutral-200 hover:text-purple-600 hover:bg-transparent',
+          ]"
         >
-          {{ option.name }}
-        </Button>
+          <div class="justify-start text-md font-semibold leading-none w-full text-left">
+            {{ option.name }}
+          </div>
+        </button>
 
         <Tooltip v-if="option.tooltip" :id="'option-' + option.value">
           {{ option.tooltip }}
