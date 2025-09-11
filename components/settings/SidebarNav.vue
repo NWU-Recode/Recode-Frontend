@@ -14,20 +14,8 @@ const sidebarNavItems: Item[] = [
     href: '/settings/profile',
   },
   {
-    title: 'Account',
-    href: '/settings/account',
-  },
-  {
     title: 'Appearance',
     href: '/settings/appearance',
-  },
-  {
-    title: 'Notifications',
-    href: '/settings/notifications',
-  },
-  {
-    title: 'Display',
-    href: '/settings/display',
   },
 ]
 </script>
