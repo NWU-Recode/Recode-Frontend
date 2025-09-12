@@ -3,51 +3,41 @@ import { themes } from '@/lib/registry/themes'
 
 const { theme, radius, setTheme, setRadius } = useCustomize()
 
-type Color
-  = | 'zinc'
-    | 'slate'
-    | 'stone'
-    | 'gray'
-    | 'neutral'
-    | 'red'
-    | 'rose'
-    | 'orange'
-    | 'green'
-    | 'blue'
-    | 'yellow'
-    | 'violet'
+// Define the available theme "keys"
+type ThemeName =
+    | 'primary'      // purple-400
+    | 'secondary'    // blue-400
+    | 'tertiary'     // pink-400
+    | 'neutral'      // neutral-400
+    | 'success'      // green-400
+    | 'warning'      // yellow-400
+    | 'destructive'  // red-400
 
-// Create an array of color values
-const allColors: Color[] = [
-  'zinc',
-  'rose',
-  'blue',
-  'green',
-  'orange',
-  'red',
-  'slate',
-  'stone',
-  'gray',
+
+// Array of theme options to render
+const allThemes: ThemeName[] = [
+  'primary',
+  'secondary',
+  'tertiary',
   'neutral',
-  'yellow',
-  'violet',
+  'success',
+  'warning',
+  'destructive',
 ]
 
 const RADII = [0, 0.25, 0.5, 0.75, 1]
 
-// Whenever the theme value changes, update the document class list
+// reactively watch theme + radius and update DOM
 watch(theme, () => {
   setClassTheme()
 })
-
-// Whenever the radius value changes, update the document style
 watch(radius, () => {
   setStyleRadius()
 })
 
 function setClassTheme() {
   document.body.classList.remove(
-    ...allColors.map(color => `theme-${color}`),
+      ...allThemes.map(t => `theme-${t}`),
   )
   document.body.classList.add(`theme-${theme.value}`)
 }
@@ -56,10 +46,12 @@ function setStyleRadius() {
   document.body.style.setProperty('--radius', `${radius.value}rem`)
 }
 
-function backgroundColor(color: Color) {
-  const bg = themes.find(theme => theme.name === color)
-  return `hsl(${bg?.activeColor.light})`
+function backgroundColor(name: ThemeName) {
+  const themeDef = themes[0]
+  const color = themeDef.cssVars.light[name]
+  return `hsl(${color})`
 }
+
 
 const colorMode = useColorMode()
 </script>
@@ -100,7 +92,3 @@ const colorMode = useColorMode()
     </div>
   </div>
 </template>
-
-<style scoped>
-
-</style>
