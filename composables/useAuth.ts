@@ -42,6 +42,15 @@ export function useAuth() {
 
     try {
       let token = localStorage.getItem('access_token')
+      const refreshToken = localStorage.getItem('refresh_token')
+
+      // 🚨 If there are no tokens at all → log them out immediately
+      if (!token && !refreshToken) {
+        user.value = null
+        loading.value = false  // ✅ stop loading
+        router.push('/login')
+        return null
+      }
 
       const attemptFetch = async (): Promise<User> => {
         return await $fetch<User>(`${config.public.apiBase}/profiles/me`, {
@@ -54,7 +63,7 @@ export function useAuth() {
         if (!token) token = await getNewToken()
         user.value = await attemptFetch()
       } catch (err: any) {
-        if (err?.response?.status === 401) {
+        if (err?.response?.status === 401 && refreshToken) {
           token = await getNewToken()
           user.value = await attemptFetch()
         } else {
@@ -65,11 +74,12 @@ export function useAuth() {
       return user.value
     } catch (err) {
       console.error('Error fetching user:', err)
-      user.value = null // <-- mark as not logged in
+      user.value = null
       error.value = err
+      router.push('/login')
       return null
     } finally {
-      loading.value = false
+      loading.value = false  // ✅ always stop loading
     }
   }
 

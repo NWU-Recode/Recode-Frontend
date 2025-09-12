@@ -29,7 +29,7 @@ const showModalTheme = ref(false)
           >
             <Avatar class="h-8 w-8 rounded-lg">
               <AvatarImage :src="user.avatar" :alt="user.name" />
-              <AvatarFallback class="rounded-lg">
+              <AvatarFallback class="w-8 h-8 bg-gradient-to-tr from-blue-400 via-purple-400 to-pink-400 rounded-lg flex items-center justify-center font-extrabold leading-tight">
                 {{ user.name.split(' ').map((n) => n[0]).join('') }}
               </AvatarFallback>
             </Avatar>
@@ -49,7 +49,7 @@ const showModalTheme = ref(false)
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar class="h-8 w-8 rounded-lg">
                 <AvatarImage :src="user.avatar" :alt="user.name" />
-                <AvatarFallback class="rounded-lg">
+                <AvatarFallback class="w-8 h-8 bg-gradient-to-tr from-blue-400 via-purple-400 to-pink-400 rounded-lg flex items-center justify-center font-extrabold leading-tight">
                   {{ user.name.split(' ').map((n) => n[0]).join('') }}
                 </AvatarFallback>
               </Avatar>

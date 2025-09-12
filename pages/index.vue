@@ -12,7 +12,6 @@ const { user } = useAuth()
 
 <template>
   <DashboardLayout v-slot="{ activeTab }">
-    <!-- Overview Tab -->
     <div v-if="activeTab === 'overview'">
       <S_Overview v-if="user?.role === 'student'" />
       <L_Overview v-else-if="user?.role === 'lecturer'" />

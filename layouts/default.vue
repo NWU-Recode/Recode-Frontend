@@ -49,21 +49,19 @@ watch(user, (val) => {
 <template>
   <SidebarProvider>
     <LayoutAppSidebar />
-    <SidebarInset>
+    <div class="flex flex-col min-h-screen flex-1">
       <LayoutHeader />
-
-      <div class="min-w-0 w-full flex-1 overflow-x-auto p-4 lg:p-6 relative">
-        <!-- Loader with fade -->
+      <SidebarInset class="flex-1 overflow-x-auto p-4 lg:p-6 relative">
         <transition name="fade">
           <FunLoader v-if="pageLoading || user === undefined" />
         </transition>
 
-        <!-- Content slot -->
         <slot v-if="!pageLoading && user !== undefined" />
-      </div>
-    </SidebarInset>
+      </SidebarInset>
+    </div>
   </SidebarProvider>
 </template>
+
 
 <style scoped>
 .fade-enter-active,

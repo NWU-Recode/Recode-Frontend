@@ -41,11 +41,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* stick to top */
+  padding-top: 80px;           /* adjust as needed */
   height: 100vh;
-  transition: opacity 0.6s ease; /* smooth fade */
+  transition: opacity 0.6s ease;
   opacity: 1;
 }
+
 .loader-container.fade-leave-active {
   opacity: 0;
 }
