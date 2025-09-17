@@ -6,7 +6,7 @@
   <p> <!-- TODO: section header --></p>
   <div class="mt-10 grid gap-6 lg:grid-cols-4 md:grid-cols-2 md:gap-8">
     <!-- Card 1 -->
-    <Card class="h-40 shadow-[0px_0px_10px_1px_rgb(96,165,250)] rounded-lg overflow-hidden relative">
+    <Card class="h-40">
       <CardContent class="p-4 h-full flex flex-col justify-between">
         <!-- Header -->
         <div class="flex justify-between items-start">
@@ -41,21 +41,21 @@
 
 
     <!-- Card 2 -->
-    <Card class="h-40 shadow-[0px_0px_10px_1px_rgb(96,165,250)] rounded-lg overflow-hidden relative">
+    <Card class="h-40">
       <CardContent class="p-4 h-full flex flex-col justify-center">
         <p class="text-gray-600">Card 2 content here</p>
       </CardContent>
     </Card>
 
     <!-- Card 3 -->
-    <Card class="h-40 shadow-[0px_0px_10px_1px_rgb(96,165,250)] rounded-lg overflow-hidden relative">
+    <Card class="h-40">
       <CardContent class="p-4 h-full flex flex-col justify-center">
         <p class="text-gray-600">Card 3 content here</p>
       </CardContent>
     </Card>
 
     <!-- Card 4 -->
-    <Card class="h-40 shadow-[0px_0px_10px_1px_rgb(96,165,250)] rounded-lg overflow-hidden relative">
+    <Card class="h-40">
       <CardContent class="p-4 h-full flex flex-col justify-center">
         <p class="text-gray-600">Card 4 content here</p>
       </CardContent>
