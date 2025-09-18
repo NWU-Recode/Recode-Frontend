@@ -29,31 +29,25 @@ export function useCustomize() {
     config.value.radius = newRadius
   }
 
-  /**
-   * Get HSL for the primary color of the current theme
-   */
+  /** Get HSL for the primary color of the current theme */
   const themePrimary = computed(() => {
     const t = themes.find(t => t.name === theme.value)
     if (!t) return ''
     return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'].primary})`
   })
 
-  /**
-   * Get HSL for semantic colors: success, warning, destructive
-   */
+  /** Get HSL for semantic colors: success, warning, destructive */
   function semanticColor(key: 'success' | 'warning' | 'destructive') {
     const t = themes.find(t => t.name === theme.value)
     if (!t) return ''
     return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'][key]})`
   }
 
-  /**
-   * Get foreground color for current mode
-   */
+  /** Get foreground color for current mode */
   const foreground = computed(() => {
     const t = themes.find(t => t.name === theme.value)
     if (!t) return ''
-    return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'][`${theme.value}-foreground`] || '0 0% 96.1%'})`
+    return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'].foreground})`
   })
 
   return {
@@ -65,5 +59,6 @@ export function useCustomize() {
     themePrimary,
     semanticColor,
     foreground,
+    isDark,
   }
 }
