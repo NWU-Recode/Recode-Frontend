@@ -34,7 +34,7 @@ const files = [
   <div>
     <!-- Action button -->
     <div class="flex py-4">
-      <Button variant="outline" class="flex items-center gap-2 px-3 py-2" @click="open = true">
+      <Button class="flex items-center gap-2 px-3 py-2" @click="open = true">
         <Icon name="i-radix-icons-plus" class="w-4 h-4" />
         <span class="text-sm font-medium">New file upload</span>
       </Button>
