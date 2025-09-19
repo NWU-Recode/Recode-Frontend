@@ -31,7 +31,7 @@ function clearAll() {
   if (fileInputRef.value) fileInputRef.value.value = "";
 }
 
-function onCancel() {
+function onClear() {
   if (isUploading.value) isUploading.value = false;
   clearAll();
   emit("close");
@@ -127,9 +127,9 @@ async function uploadFile() {
       <Button
           variant="outline"
           class="flex items-center gap-2 px-3 py-2 text-sm font-medium"
-          @click="onCancel"
+          @click="onClear"
       >
-        Cancel
+        Clear
       </Button>
 
       <Button
