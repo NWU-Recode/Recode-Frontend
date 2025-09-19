@@ -28,10 +28,6 @@ const { handleSubmit } = useForm({
 const color = useColorMode()
 
 const onSubmit = handleSubmit((values) => {
-  toast({
-    title: 'You submitted the following values:',
-    description: h('pre', { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
-  })
   if (values.theme === 'dark') {
     color.preference = 'dark'
   }
@@ -52,38 +48,6 @@ const onSubmit = handleSubmit((values) => {
   </div>
   <Separator />
   <form class="space-y-8" @submit="onSubmit">
-    <FormField v-slot="{ field }" name="font">
-      <FormItem>
-        <FormLabel>Font</FormLabel>
-        <div class="relative w-[200px]">
-          <FormControl>
-            <select
-              :class="cn(
-                buttonVariants({ variant: 'outline' }),
-                'w-[200px] appearance-none font-normal',
-              )"
-              v-bind="field"
-            >
-              <option value="inter">
-                Inter
-              </option>
-              <option value="manrope">
-                Manrope
-              </option>
-              <option value="system">
-                System
-              </option>
-            </select>
-          </FormControl>
-          <Icon name="i-radix-icons-chevron-down" class="pointer-events-none absolute right-3 top-2.5 h-4 w-4 opacity-50" />
-        </div>
-        <FormDescription>
-          Set the font you want to use in the dashboard.
-        </FormDescription>
-        <FormMessage />
-      </FormItem>
-    </FormField>
-
     <FormField v-slot="{ componentField }" type="radio" name="theme">
       <FormItem class="space-y-1">
         <FormLabel>Theme</FormLabel>
