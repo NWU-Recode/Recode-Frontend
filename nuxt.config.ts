@@ -42,6 +42,15 @@ export default defineNuxtConfig({
     ],
   },
 
+  components: [
+    {
+      path: '~/components/ui',
+      pathPrefix: false,
+      extensions: ['.vue'],
+    },
+    '~/components',
+  ],
+
   runtimeConfig: {
     public: {
       apiBase: process.env.API_BASE || 'https://recode-backend.onrender.com',

@@ -20,7 +20,7 @@ const { setOpenMobile } = useSidebar()
         <NuxtLink :to="item.link" @click="setOpenMobile(false)">
           <Icon :name="item.icon || ''" mode="svg" />
           <span>{{ item.title }}</span>
-          <span v-if="item.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-black leading-none no-underline group-hover:no-underline">
+          <span v-if="item.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-neutral-700 leading-none no-underline group-hover:no-underline">
             New
           </span>
         </NuxtLink>
