@@ -51,7 +51,7 @@
             <!-- Header -->
             <div class="flex items-start justify-between">
               <span class="text-sm text-gray-700">CMPG 111</span>
-              <span class="text-base text-gray-700 font-semibold">If Statements</span>
+              <span class="text-base text-gray-700 font-semibold">Else Statements</span>
             </div>
 
             <!-- Icons row (flex, evenly spaced) -->
@@ -64,15 +64,15 @@
             <!-- Percentages row (flex, evenly spaced) -->
             <div class="mt-4 flex justify-between">
               <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">67</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
                 <span class="text-lg text-gray-700 font-semibold">55</span>
                 <span class="text-base text-gray-700 font-semibold">%</span>
               </div>
               <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">47</span>
+                <span class="text-lg text-gray-700 font-semibold">37</span>
+                <span class="text-base text-gray-700 font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg text-gray-700 font-semibold">12</span>
                 <span class="text-base text-gray-700 font-semibold">%</span>
               </div>
             </div>
@@ -87,7 +87,7 @@
             <!-- Header -->
             <div class="flex items-start justify-between">
               <span class="text-sm text-gray-700">CMPG 111</span>
-              <span class="text-base text-gray-700 font-semibold">If Statements</span>
+              <span class="text-base text-gray-700 font-semibold">While Loops</span>
             </div>
 
             <!-- Icons row (flex, evenly spaced) -->
@@ -100,15 +100,15 @@
             <!-- Percentages row (flex, evenly spaced) -->
             <div class="mt-4 flex justify-between">
               <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">67</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
                 <span class="text-lg text-gray-700 font-semibold">55</span>
                 <span class="text-base text-gray-700 font-semibold">%</span>
               </div>
               <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">47</span>
+                <span class="text-lg text-gray-700 font-semibold">45</span>
+                <span class="text-base text-gray-700 font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg text-gray-700 font-semibold">12</span>
                 <span class="text-base text-gray-700 font-semibold">%</span>
               </div>
             </div>
@@ -122,7 +122,7 @@
           <!-- Header -->
           <div class="flex items-start justify-between">
             <span class="text-sm text-gray-700">CMPG 111</span>
-            <span class="text-base text-gray-700 font-semibold">If Statements</span>
+            <span class="text-base text-gray-700 font-semibold">Do-While Loops</span>
           </div>
 
           <!-- Icons row (flex, evenly spaced) -->
@@ -135,15 +135,15 @@
           <!-- Percentages row (flex, evenly spaced) -->
           <div class="mt-4 flex justify-between">
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">67</span>
+              <span class="text-lg text-gray-700 font-semibold">34</span>
               <span class="text-base text-gray-700 font-semibold">%</span>
             </div>
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">55</span>
+              <span class="text-lg text-gray-700 font-semibold">17</span>
               <span class="text-base text-gray-700 font-semibold">%</span>
             </div>
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">47</span>
+              <span class="text-lg text-gray-700 font-semibold">6</span>
               <span class="text-base text-gray-700 font-semibold">%</span>
             </div>
           </div>
@@ -158,9 +158,9 @@
   </Button>
   -->
   <div class="mb-2 mt-8 flex items-center justify-between">
-    <p class="md-4 flex justify-start font-semibold">
+    <h4 class="md-4 flex justify-start font-semibold">
       Select a topic to edit your challenges:
-    </p>
+    </h4>
 
     <!-- Navigation Buttons: Previous, Next, Submit -->
     <div class="md-4 flex justify-end gap-2">
