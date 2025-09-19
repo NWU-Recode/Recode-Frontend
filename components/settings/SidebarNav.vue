@@ -26,7 +26,7 @@ const sidebarNavItems: Item[] = [
 
 <template>
   <nav class="flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-1">
-    <button
+    <Button
       v-for="item in sidebarNavItems"
       :key="item.title"
       variant="ghost"
@@ -43,6 +43,6 @@ const sidebarNavItems: Item[] = [
       >
         {{ item.title }}
       </NuxtLink>
-    </button>
+    </Button>
   </nav>
 </template>

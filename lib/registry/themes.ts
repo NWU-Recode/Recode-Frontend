@@ -1,7 +1,7 @@
 export const themes = [
   {
-    name: 'neutral',
-    label: 'Default Theme',
+    name: 'brand',
+    label: 'Brand (Tailwind - 400)',
     activeColor: {
       light: '270 95.2% 75.3%', // purple-400
       dark: '270 95.2% 75.3%',
