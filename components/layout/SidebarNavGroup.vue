@@ -28,7 +28,7 @@ const openCollapsible = ref(false)
           <SidebarMenuButton :tooltip="item.title" :size="size">
             <Icon :name="item.icon || ''" mode="svg" />
             <span>{{ item.title }}</span>
-            <span v-if="item.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-black leading-none no-underline group-hover:no-underline">
+            <span v-if="item.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-neutral-700 leading-none no-underline group-hover:no-underline">
               New
             </span>
             <Icon name="i-lucide-chevron-right" class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -43,7 +43,7 @@ const openCollapsible = ref(false)
               <SidebarMenuSubButton as-child>
                 <NuxtLink :to="subItem.link" @click="setOpenMobile(false)">
                   <span>{{ subItem.title }}</span>
-                  <span v-if="subItem.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-black leading-none no-underline group-hover:no-underline">
+                  <span v-if="subItem.new" class="rounded-md bg-#adfa1d px-1.5 py-0.5 text-xs text-neutral-700 leading-none no-underline group-hover:no-underline">
                     New
                   </span>
                 </NuxtLink>

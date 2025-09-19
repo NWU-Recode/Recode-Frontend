@@ -217,7 +217,7 @@ const onSubmit = handleSubmit(async (values) => {
               <TooltipTrigger as-child>
                 <Icon
                     name="i-lucide-info"
-                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                    class="w-4 h-4 text-neutral-500 cursor-pointer"
                 />
               </TooltipTrigger>
               <TooltipContent>
@@ -281,7 +281,7 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <div class="flex flex-col items-end md:ml-6">
-          <span class="text-sm text-gray-500">Awarded title</span>
+          <span class="text-sm text-neutral-500">Awarded title</span>
           <span class="text-2xl font-medium">{{ props.profile.title || 'Trainee' }}</span>
         </div>
       </div>
