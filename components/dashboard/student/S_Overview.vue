@@ -33,16 +33,16 @@ const steps = [
 
 <template>
   <div>
-    <div class="flex items-start justify-between">
+    <div class="mt-4 flex items-start justify-between">
       <div>
-        <h2 class="mb-4 mt-4 text-4xl font-bold">
+        <h2 class="mb-4 mt-4 text-4xl font-bold text-purple-400">
           Welcome to Recode,
         </h2>
         <h2 class="mb-4 text-4xl">
           Sourcerer Piet Pompies
         </h2>
       </div>
-      <Card class="h-34 w-120 flex items-center justify-center overflow-hidden border border-blue-400/20 rounded-2xl bg-blue-400/10 px-8 py-6">
+      <Card class="h-26 w-120 flex items-center justify-center bg-blue-400/10 px-8 py-6">
         <CardContent class="h-full w-full flex items-center justify-between p-0">
           <div class="bl-5 flex items-center gap-5">
             <div class="flex items-start gap-5">
@@ -66,7 +66,7 @@ const steps = [
 
   <div class="grid mt-10 gap-10 lg:grid-cols-4 md:grid-cols-2 md:gap-8">
     <!-- Card 1 -->
-    <Card class="relative h-60 overflow-hidden rounded-lg shadow-[0px_0px_8px_1px_rgb(96,165,250)]">
+    <Card class="h-45">
       <CardContent class="h-full flex flex-col justify-center p-10">
         <!-- Header -->
         <div class="flex items-start justify-between">
@@ -105,7 +105,7 @@ const steps = [
                 <Dot v-if="state === 'inactive'" />
               </Button>
             </StepperTrigger>
-
+<!--
             <div class="mt-5 flex flex-col items-center text-center">
               <StepperTitle
                 :class="[state === 'active' && 'text-primary']"
@@ -114,12 +114,13 @@ const steps = [
                 {{ step.title }}
               </StepperTitle>
             </div>
+-->
           </StepperItem>
         </Stepper>
       </CardContent>
     </Card>
     <!-- Card 2 -->
-    <Card class="relative h-60 overflow-hidden rounded-lg shadow-[0px_0px_8px_1px_rgb(96,165,250)]">
+    <Card class="h-45">
       <CardContent class="h-full flex flex-col justify-center p-10">
         <!-- Header -->
         <div class="flex items-start justify-between">
@@ -158,7 +159,7 @@ const steps = [
                 <Dot v-if="state === 'inactive'" />
               </Button>
             </StepperTrigger>
-
+<!--
             <div class="mt-5 flex flex-col items-center text-center">
               <StepperTitle
                 :class="[state === 'active' && 'text-primary']"
@@ -167,12 +168,13 @@ const steps = [
                 {{ step.title }}
               </StepperTitle>
             </div>
+-->
           </StepperItem>
         </Stepper>
       </CardContent>
     </Card>
     <!-- Card 3 -->
-    <Card class="relative h-60 overflow-hidden rounded-lg shadow-[0px_0px_8px_1px_rgb(96,165,250)]">
+    <Card class="h-45">
       <CardContent class="h-full flex flex-col justify-center p-10">
         <!-- Header -->
         <div class="flex items-start justify-between">
@@ -211,7 +213,7 @@ const steps = [
                 <Dot v-if="state === 'inactive'" />
               </Button>
             </StepperTrigger>
-
+<!--
             <div class="mt-5 flex flex-col items-center text-center">
               <StepperTitle
                 :class="[state === 'active' && 'text-primary']"
@@ -220,12 +222,13 @@ const steps = [
                 {{ step.title }}
               </StepperTitle>
             </div>
+-->
           </StepperItem>
         </Stepper>
       </CardContent>
     </Card>
     <!-- Card 4 -->
-    <Card class="relative h-60 overflow-hidden rounded-lg shadow-[0px_0px_8px_1px_rgb(96,165,250)]">
+    <Card class="h-45">
       <CardContent class="h-full flex flex-col justify-center p-10">
         <!-- Header -->
         <div class="flex items-start justify-between">
@@ -264,7 +267,7 @@ const steps = [
                 <Dot v-if="state === 'inactive'" />
               </Button>
             </StepperTrigger>
-
+<!--
             <div class="mt-5 flex flex-col items-center text-center">
               <StepperTitle
                 :class="[state === 'active' && 'text-primary']"
@@ -273,18 +276,14 @@ const steps = [
                 {{ step.title }}
               </StepperTitle>
             </div>
+-->
           </StepperItem>
         </Stepper>
       </CardContent>
     </Card>
   </div>
-  <div>
-    <h3 class="mt-10 overflow-x-auto rounded-lg text-2xl font-bold">
-      Your Recent Challenges
-    </h3>
-
-    <Table class="mt-4 border">
-      <TableCaption>A list of your recent challenges.</TableCaption>
+  <div class="mt-8">
+    <Table>
       <TableHeader>
         <TableRow>
           <TableHead>
