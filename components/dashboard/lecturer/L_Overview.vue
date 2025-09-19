@@ -56,9 +56,9 @@
 
             <!-- Icons row (flex, evenly spaced) -->
             <div class="mt-2 flex justify-between">
-              <img class="h-10 w-10" src="/assets/bronze.png" alt="bronze">
-              <img class="h-10 w-10" src="/assets/silver.png" alt="silver">
-              <img class="h-10 w-10" src="/assets/gold.png" alt="gold">
+              <img class="h-10 w-10" src="/assets/flat-icon/bronze.png" alt="bronze">
+              <img class="h-10 w-10" src="/assets/flat-icon/silver.png" alt="silver">
+              <img class="h-10 w-10" src="/assets/flat-icon/gold.png" alt="gold">
             </div>
 
             <!-- Percentages row (flex, evenly spaced) -->
@@ -92,9 +92,9 @@
 
             <!-- Icons row (flex, evenly spaced) -->
             <div class="mt-2 flex justify-between">
-              <img class="h-10 w-10" src="/assets/bronze.png" alt="bronze">
-              <img class="h-10 w-10" src="/assets/silver.png" alt="silver">
-              <img class="h-10 w-10" src="/assets/gold.png" alt="gold">
+              <img class="h-10 w-10" src="/assets/flat-icon/bronze.png" alt="bronze">
+              <img class="h-10 w-10" src="/assets/flat-icon/silver.png" alt="silver">
+              <img class="h-10 w-10" src="/assets/flat-icon/gold.png" alt="gold">
             </div>
 
             <!-- Percentages row (flex, evenly spaced) -->
@@ -127,9 +127,9 @@
 
           <!-- Icons row (flex, evenly spaced) -->
           <div class="mt-2 flex justify-between">
-            <img class="h-10 w-10" src="/assets/bronze.png" alt="bronze">
-            <img class="h-10 w-10" src="/assets/silver.png" alt="silver">
-            <img class="h-10 w-10" src="/assets/gold.png" alt="gold">
+            <img class="h-10 w-10" src="/assets/flat-icon/bronze.png" alt="bronze">
+            <img class="h-10 w-10" src="/assets/flat-icon/silver.png" alt="silver">
+            <img class="h-10 w-10" src="/assets/flat-icon/gold.png" alt="gold">
           </div>
 
           <!-- Percentages row (flex, evenly spaced) -->
