@@ -78,10 +78,10 @@ export default defineConfig({
         :root {
           --sidebar-background: 0 0% 98%;
           --sidebar-foreground: 240 5.3% 26.1%;
-          --sidebar-primary: 240 5.9% 10%;
-          --sidebar-primary-foreground: 0 0% 98%;
-          --sidebar-accent: 240 4.8% 95.9%;
-          --sidebar-accent-foreground: 240 5.9% 10%;
+          --sidebar-primary: 270 95.2% 75.3%;
+          --sidebar-primary-foreground: 0 0% 25.1%;
+          --sidebar-accent: 213.1 93.9% 67.8%;
+          --sidebar-accent-foreground: 0 0% 25.1%;
           --sidebar-border: 220 13% 91%;
           --sidebar-ring: 217.2 91.2% 59.8%;
         }
@@ -89,10 +89,10 @@ export default defineConfig({
         .dark {
           --sidebar-background: 240 5.9% 10%;
           --sidebar-foreground: 240 4.8% 95.9%;
-          --sidebar-primary: 224.3 76.3% 48%;
-          --sidebar-primary-foreground: 0 0% 100%;
-          --sidebar-accent: 240 3.7% 15.9%;
-          --sidebar-accent-foreground: 240 4.8% 95.9%;
+          --sidebar-primary: 270 95.2% 75.3%;
+          --sidebar-primary-foreground: 0 0% 96.1%;
+          --sidebar-accent: 213.1 93.9% 67.8%;
+          --sidebar-accent-foreground: 0 0% 96.1%;
           --sidebar-border: 240 3.7% 15.9%;
           --sidebar-ring: 217.2 91.2% 59.8%;
         }
