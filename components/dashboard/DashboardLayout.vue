@@ -31,11 +31,11 @@ const tabOptions = computed(() => {
 </script>
 
 <template>
-  <div class="flex-end w-full flex gap-4">
+  <div class="w-full flex justify-end items-center mb-4">
     <NavTabs v-model="activeTab" :options="tabOptions" direction="horizontal" />
+  </div>
 
-    <div class="mt-4">
-      <slot :active-tab="activeTab" />
-    </div>
+  <div>
+    <slot :active-tab="activeTab" />
   </div>
 </template>

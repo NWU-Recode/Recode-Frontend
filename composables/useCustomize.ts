@@ -7,8 +7,9 @@ interface Config {
 }
 
 export function useCustomize() {
-  const { value: color } = useColorMode()
-  const isDark = color === 'dark'
+  const { value: colorMode } = useColorMode()
+  const isDark = computed(() => colorMode === 'dark')
+
   const config = useCookie<Config>('config', {
     default: () => ({
       theme: 'neutral',
@@ -17,7 +18,6 @@ export function useCustomize() {
   })
 
   const themeClass = computed(() => `theme-${config.value.theme}`)
-
   const theme = computed(() => config.value.theme)
   const radius = computed(() => config.value.radius)
 
@@ -29,11 +29,25 @@ export function useCustomize() {
     config.value.radius = newRadius
   }
 
+  /** Get HSL for the primary color of the current theme */
   const themePrimary = computed(() => {
     const t = themes.find(t => t.name === theme.value)
-    return `hsl(${
-      t?.cssVars[isDark ? 'dark' : 'light'].primary
-    })`
+    if (!t) return ''
+    return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'].primary})`
+  })
+
+  /** Get HSL for semantic colors: success, warning, destructive */
+  function semanticColor(key: 'success' | 'warning' | 'destructive') {
+    const t = themes.find(t => t.name === theme.value)
+    if (!t) return ''
+    return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'][key]})`
+  }
+
+  /** Get foreground color for current mode */
+  const foreground = computed(() => {
+    const t = themes.find(t => t.name === theme.value)
+    if (!t) return ''
+    return `hsl(${t.cssVars[isDark.value ? 'dark' : 'light'].foreground})`
   })
 
   return {
@@ -43,5 +57,8 @@ export function useCustomize() {
     radius,
     setRadius,
     themePrimary,
+    semanticColor,
+    foreground,
+    isDark,
   }
 }
