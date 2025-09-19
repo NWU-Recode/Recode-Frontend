@@ -39,7 +39,7 @@ const steps = [
           Welcome to Recode,
         </h2>
         <h2 class="mb-4 text-4xl">
-          Sorceror, Anneme Janse van Rensburg
+          Sourcerer Piet Pompies
         </h2>
       </div>
       <Card class="h-34 w-120 flex items-center justify-center overflow-hidden border border-blue-400/20 rounded-2xl bg-blue-400/10 px-8 py-6">
