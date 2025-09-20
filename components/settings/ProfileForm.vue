@@ -109,7 +109,7 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <form class="space-y-8" @submit="onSubmit">
     <!-- SECTION 1: Avatar + Name + Title -->
-    <div class="w-full relative shadow-[0px_0px_10px_1px_rgb(96,165,250)] overflow-hidden rounded-lg p-6 flex items-center gap-6">
+    <Card class="p-6 flex items-center gap-6">
       <div class="relative">
         <Avatar class="h-35 w-35 rounded-[30px]">
           <AvatarImage :src="avatarPreview || ''" alt="Profile avatar" />
@@ -158,10 +158,10 @@ const onSubmit = handleSubmit(async (values) => {
           </FormItem>
         </FormField>
       </div>
-    </div>
+    </Card>
 
     <!-- SECTION 2: Personal Details -->
-    <div class="w-full relative shadow-[0px_0px_10px_1px_rgb(96,165,250)] overflow-hidden rounded-lg p-6 space-y-6">
+    <Card class="p-6 space-y-6">
       <h3 class="text-lg font-medium">Personal Details</h3>
 
       <FormField v-slot="{ componentField }" name="email">
@@ -194,13 +194,10 @@ const onSubmit = handleSubmit(async (values) => {
           <FormMessage />
         </FormItem>
       </FormField>
-    </div>
+    </Card>
 
     <!-- SECTION 3: Class Details (Lecturer only) -->
-    <div
-        v-if="props.profile.role === 'lecturer'"
-        class="w-full relative shadow-[0px_0px_10px_1px_rgb(96,165,250)] overflow-hidden rounded-lg p-6 space-y-6"
-    >
+    <Card v-if="props.profile.role === 'lecturer'" class="p-6 space-y-6">
       <h3 class="text-lg font-medium">Class Details</h3>
 
       <div>
@@ -220,7 +217,7 @@ const onSubmit = handleSubmit(async (values) => {
               <TooltipTrigger as-child>
                 <Icon
                     name="i-lucide-info"
-                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                    class="w-4 h-4 text-neutral-500 cursor-pointer"
                 />
               </TooltipTrigger>
               <TooltipContent>
@@ -231,21 +228,18 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <div class="flex gap-2">
-          <Button variant="outline" class="flex items-center gap-1">
+          <Button variant="secondary" class="flex items-center gap-1">
             <Icon name="i-lucide-upload" /> Upload student CSV
           </Button>
-          <Button variant="outline" class="flex items-center gap-1">
+          <Button variant="secondary" class="flex items-center gap-1">
             <Icon name="i-lucide-plus" /> Add student
           </Button>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- SECTION 4: Personal Stats (Student only) -->
-    <div
-        v-if="props.profile.role === 'student'"
-        class="w-full relative shadow-[0px_0px_10px_1px_rgb(96,165,250)] overflow-hidden rounded-lg p-6 space-y-6"
-    >
+    <Card v-if="props.profile.role === 'student'" class="p-6 space-y-6">
       <h3 class="text-lg font-medium">Personal Stats</h3>
 
       <div>
@@ -287,12 +281,11 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <div class="flex flex-col items-end md:ml-6">
-          <span class="text-sm text-gray-500">Awarded title</span>
+          <span class="text-sm text-neutral-500">Awarded title</span>
           <span class="text-2xl font-medium">{{ props.profile.title || 'Trainee' }}</span>
         </div>
       </div>
-    </div>
-
+    </Card>
 
     <!-- Actions -->
     <div class="flex justify-start gap-2">
@@ -303,3 +296,4 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </form>
 </template>
+
