@@ -61,118 +61,11 @@ watch(selectedLanguage, (lang) => {
     <div class="grid mt-10 gap-6 lg:grid-cols-4 md:grid-cols-2 md:gap-8">
       <!-- Card 1 -->
       <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <CardContent class="h-full flex flex-col justify-between p-4">
-            <!-- Header -->
-            <div class="flex items-start justify-between">
-              <span class="text-sm text-gray-700">CMPG 111</span>
-              <span class="text-base text-gray-700 font-semibold">If Statements</span>
-            </div>
-
-            <!-- Icons row (flex, evenly spaced) -->
-            <div class="mt-2 flex justify-between">
-              <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-              <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-              <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-            </div>
-
-            <!-- Percentages row (flex, evenly spaced) -->
-            <div class="mt-4 flex justify-between">
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">67</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">55</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">47</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-            </div>
-          </CardContent>
-        </CardContent>
-      </Card>
-      <!-- Card 2 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <CardContent class="h-full flex flex-col justify-between p-4">
-            <!-- Header -->
-            <div class="flex items-start justify-between">
-              <span class="text-sm text-gray-700">CMPG 111</span>
-              <span class="text-base text-gray-700 font-semibold">Else Statements</span>
-            </div>
-
-            <!-- Icons row (flex, evenly spaced) -->
-            <div class="mt-2 flex justify-between">
-              <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-              <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-              <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-            </div>
-
-            <!-- Percentages row (flex, evenly spaced) -->
-            <div class="mt-4 flex justify-between">
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">55</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">37</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">12</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-            </div>
-          </CardContent>
-        </CardContent>
-      </Card>
-
-      <!-- Card 3 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <CardContent class="h-full flex flex-col justify-between p-4">
-            <!-- Header -->
-            <div class="flex items-start justify-between">
-              <span class="text-sm text-gray-700">CMPG 111</span>
-              <span class="text-base text-gray-700 font-semibold">While Loops</span>
-            </div>
-
-            <!-- Icons row (flex, evenly spaced) -->
-            <div class="mt-2 flex justify-between">
-              <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-              <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-              <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-            </div>
-
-            <!-- Percentages row (flex, evenly spaced) -->
-            <div class="mt-4 flex justify-between">
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">55</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">45</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-              <div class="flex items-baseline gap-1">
-                <span class="text-lg text-gray-700 font-semibold">12</span>
-                <span class="text-base text-gray-700 font-semibold">%</span>
-              </div>
-            </div>
-          </CardContent>
-        </CardContent>
-      </Card>
-
-      <!-- Card 4 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-between p-4">
+        <CardContent class="h-full flex flex-col justify-between p-8">
           <!-- Header -->
           <div class="flex items-start justify-between">
-            <span class="text-sm text-gray-700">CMPG 111</span>
-            <span class="text-base text-gray-700 font-semibold">Do-While Loops</span>
+            <span class="text-sm">CMPG 111</span>
+            <span class="text-base font-semibold">If Statements</span>
           </div>
 
           <!-- Icons row (flex, evenly spaced) -->
@@ -185,16 +78,121 @@ watch(selectedLanguage, (lang) => {
           <!-- Percentages row (flex, evenly spaced) -->
           <div class="mt-4 flex justify-between">
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">34</span>
-              <span class="text-base text-gray-700 font-semibold">%</span>
+              <span class="text-lg font-semibold">67</span>
+              <span class="text-base font-semibold">%</span>
             </div>
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">17</span>
-              <span class="text-base text-gray-700 font-semibold">%</span>
+              <span class="text-lg font-semibold">55</span>
+              <span class="text-base font-semibold">%</span>
             </div>
             <div class="flex items-baseline gap-1">
-              <span class="text-lg text-gray-700 font-semibold">6</span>
-              <span class="text-base text-gray-700 font-semibold">%</span>
+              <span class="text-lg font-semibold">47</span>
+              <span class="text-base font-semibold">%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <!-- Card 2 -->
+      <Card class="h-40">
+        <CardContent class="h-full flex flex-col justify-center p-4">
+          <CardContent class="h-full flex flex-col justify-between p-4">
+            <!-- Header -->
+            <div class="flex items-start justify-between">
+              <span class="text-sm">CMPG 111</span>
+              <span class="text-base font-semibold">Else Statements</span>
+            </div>
+
+            <!-- Icons row (flex, evenly spaced) -->
+            <div class="mt-2 flex justify-between">
+              <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
+              <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
+              <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
+            </div>
+
+            <!-- Percentages row (flex, evenly spaced) -->
+            <div class="mt-4 flex justify-between">
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">55</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">37</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">12</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+            </div>
+          </CardContent>
+        </CardContent>
+      </Card>
+
+      <!-- Card 3 -->
+      <Card class="h-40">
+        <CardContent class="h-full flex flex-col justify-center p-4">
+          <CardContent class="h-full flex flex-col justify-between p-4">
+            <!-- Header -->
+            <div class="flex items-start justify-between">
+              <span class="text-sm">CMPG 111</span>
+              <span class="text-base font-semibold">While Loops</span>
+            </div>
+
+            <!-- Icons row (flex, evenly spaced) -->
+            <div class="mt-2 flex justify-between">
+              <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
+              <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
+              <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
+            </div>
+
+            <!-- Percentages row (flex, evenly spaced) -->
+            <div class="mt-4 flex justify-between">
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">55</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">45</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-semibold">12</span>
+                <span class="text-base font-semibold">%</span>
+              </div>
+            </div>
+          </CardContent>
+        </CardContent>
+      </Card>
+
+      <!-- Card 4 -->
+      <Card class="h-40">
+        <CardContent class="h-full flex flex-col justify-between p-4">
+          <!-- Header -->
+          <div class="flex items-start justify-between">
+            <span class="text-sm">CMPG 111</span>
+            <span class="text-base font-semibold">Do-While Loops</span>
+          </div>
+
+          <!-- Icons row (flex, evenly spaced) -->
+          <div class="mt-2 flex justify-between">
+            <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
+            <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
+            <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
+          </div>
+
+          <!-- Percentages row (flex, evenly spaced) -->
+          <div class="mt-4 flex justify-between">
+            <div class="flex items-baseline gap-1">
+              <span class="text-lg font-semibold">34</span>
+              <span class="text-base font-semibold">%</span>
+            </div>
+            <div class="flex items-baseline gap-1">
+              <span class="text-lg font-semibold">17</span>
+              <span class="text-base font-semibold">%</span>
+            </div>
+            <div class="flex items-baseline gap-1">
+              <span class="text-lg font-semibold">6</span>
+              <span class="text-base font-semibold">%</span>
             </div>
           </div>
         </CardContent>

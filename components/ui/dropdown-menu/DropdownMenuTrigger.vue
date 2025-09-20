@@ -14,6 +14,6 @@ const forwardedProps = useForwardProps(props)
       v-bind="forwardedProps"
   >
     <slot />
-    <ChevronDown class="w-4 h-4 text-gray-500" />
+    <ChevronDown class="w-4 h-4 text-neutral-500" />
   </DropdownMenuTrigger>
 </template>
