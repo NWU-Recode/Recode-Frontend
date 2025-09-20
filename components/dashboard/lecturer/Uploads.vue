@@ -6,28 +6,33 @@ const open = ref(false)
 
 const files = [
   {
-    //TODO: replace this dummy data with NWU related dummy data
-    subject: 'Math',
-    fileName: 'algebra_notes.pdf',
+    subject: 'CMPG111',
+    fileName: 'lesson1.pdf',
     uploadDate: '2025-09-10',
-    topic: 'Algebra',
+    topic: 'If Statements',
     fileUrl: '#',
   },
   {
-    subject: 'Physics',
-    fileName: 'mechanics_intro.docx',
+    subject: 'CMPG111',
+    fileName: 'lesson2.docx',
     uploadDate: '2025-09-11',
-    topic: 'Mechanics',
+    topic: 'Else Statements',
     fileUrl: '#',
   },
   {
-    subject: 'Computer Science',
-    fileName: 'sorting_algorithms.pptx',
+    subject: 'CMPG111',
+    fileName: 'lesson3.pptx',
     uploadDate: '2025-09-12',
-    topic: 'Algorithms',
+    topic: 'While Loops',
     fileUrl: '#',
   },
 ]
+
+function handleUploaded(file: any) {
+  files.push(file)
+  open.value = false
+}
+
 </script>
 
 <template>
@@ -70,12 +75,12 @@ const files = [
     </Table>
 
     <Dialog v-model:open="open">
-      <DialogContent class="sm:max-w-md">
+      <DialogContent class="w-full max-w-full md:max-w-md p-2 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Upload new file</DialogTitle>
+          <DialogTitle class="text-sm sm:text-base">Upload new file</DialogTitle>
         </DialogHeader>
 
-        <UploadsModal />
+        <UploadsModal @close="open = false" @uploaded="handleUploaded" />
       </DialogContent>
     </Dialog>
   </div>
