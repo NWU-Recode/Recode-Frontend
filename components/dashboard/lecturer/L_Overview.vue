@@ -54,7 +54,7 @@ watch(selectedLanguage, (lang) => {
 
 <template>
   <div>
-    <h2 class="mb-4 text-4xl font-bold text-purple-600">
+    <h2 class="mb-4 text-4xl font-bold text-purple-400">
       Welcome, Prof Neels
     </h2>
 
