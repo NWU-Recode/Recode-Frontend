@@ -44,15 +44,9 @@ export default defineNuxtConfig({
 
   components: [
     {
-      path: '~/components/ui',
-      pathPrefix: false,
-      extensions: ['.vue'],      // only .vue
-      ignore: ['**/*.ts'],       // ignore all .ts files recursively
-    },
-    {
-      path: '~/components',
-      pathPrefix: false,
-      extensions: ['.vue'],
+      path: '~/components/',
+      pathPrefix: true,
+      ignore: ['**/ui/**/*.ts']
     },
   ],
 

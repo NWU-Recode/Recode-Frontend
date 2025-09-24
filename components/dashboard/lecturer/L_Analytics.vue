@@ -7,6 +7,8 @@ import Gold from '~/assets/flat-icons/gold.png'
 import Ruby from '~/assets/flat-icons/ruby.png'
 import Emerald from '~/assets/flat-icons/emerald.png'
 import Diamond from '~/assets/flat-icons/diamond.png'
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from "~/components/ui/dropdown-menu"
+import {Table, TableHeader, TableRow, TableHead, TableBody, TableCell} from "~/components/ui/table"
 
 const topics = [
   'If Statements',

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 
 import UploadsModal from "~/components/dashboard/lecturer/UploadsModal.vue";
+import {Button} from "~/components/ui/button"
+import {Table, TableHeader, TableRow, TableHead, TableBody, TableCell} from "~/components/ui/table"
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "~/components/ui/dialog";
 
 const open = ref(false)
 
