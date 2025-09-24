@@ -2,6 +2,9 @@
 import { ref, onMounted, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { ChevronLeft, ChevronRight, Send, BookOpenText, CodeXml, CircleCheck } from 'lucide-vue-next'
+import {Card, CardContent} from "~/components/ui/card";
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from "~/components/ui/dropdown-menu"
+import {Button} from "~/components/ui/button"
 
 const topics = [
   'If Statements',
