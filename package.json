@@ -1,14 +1,14 @@
 {
-  "name": "nuxt-shadcn-dashboard",
+  "name": "recode",
   "type": "module",
   "version": "0.2.6",
-  "description": "Shadcn Dashboard built with Nuxt",
-  "author": "Dian Pratama <dianpratama2@gmail.com>",
+  "description": "NWU's coding environment",
+  "author": "ReCode Labs",
   "license": "MIT",
-  "homepage": "https://dashboard.dianprata.com/",
+  "homepage": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dianprata/nuxt-shadcn-dashboard.git"
+    "url": "https://github.com/NWU-Recode"
   },
   "keywords": [
     "dashboard",
