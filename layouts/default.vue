@@ -2,6 +2,7 @@
 import { ref, watch, provide } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import FunLoader from '~/components/FunLoader.vue'
+import { SpeedInsights } from '@vercel/speed-insights/vue'
 
 const { fetchUser, user } = useAuth()
 
@@ -59,6 +60,7 @@ watch(user, (val) => {
         <slot v-if="!pageLoading && user !== undefined" />
       </SidebarInset>
     </div>
+    <SpeedInsights />
   </SidebarProvider>
 </template>
 
