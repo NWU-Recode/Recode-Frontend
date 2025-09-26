@@ -6,6 +6,7 @@ import * as z from 'zod'
 import { toast } from '~/components/ui/toast'
 import Avatar from '~/components/ui/avatar/Avatar.vue'
 import { AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import AvatarCarousel from '~/components/ui/avatar/AvatarCarousel.vue'
 import { useRuntimeConfig } from '#app'
 
 // --- Props ---
@@ -49,7 +50,15 @@ const { handleSubmit, resetForm, setValues } = useForm({
   },
 })
 
+const avatarOptions = Array.from({ length: 18 }, (_, i) => `/avatars/avatar${i + 1}.jpeg`)
+const selectedAvatar = ref<string | null>(props.profile.avatar_url ?? null)
 const avatarPreview = ref<string | null>(props.profile.avatar_url ?? null)
+
+watch(selectedAvatar, (url) => {
+  avatarPreview.value = url
+  setValues({ avatar_url: url })
+})
+
 const submitting = ref(false)
 
 // --- Watch profile prop for changes ---
@@ -71,16 +80,6 @@ watch(
     },
     { immediate: true }
 )
-
-// --- Handle avatar change ---
-function handleAvatarChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    const file = target.files[0]
-    avatarPreview.value = URL.createObjectURL(file)
-    setValues({ avatar_url: avatarPreview.value })
-  }
-}
 
 // --- Submit handler ---
 const onSubmit = handleSubmit(async (values) => {
@@ -109,25 +108,16 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <form class="space-y-8" @submit="onSubmit">
     <!-- SECTION 1: Avatar + Name + Title -->
-    <Card class="p-6 flex items-center gap-6">
-      <div class="relative">
-        <Avatar class="h-35 w-35 rounded-[30px]">
-          <AvatarImage :src="avatarPreview || ''" alt="Profile avatar" />
-          <AvatarFallback>
-            <div class="w-35 h-35 bg-gradient-to-tr from-blue-400 via-purple-400 to-pink-400 rounded-[30px] flex items-center justify-center font-extrabold text-4xl leading-tight">
-              {{ props.profile.full_name.split(' ').map((n) => n[0]).join('') }}
-            </div>
-          </AvatarFallback>
-        </Avatar>
-        <input
-            type="file"
-            accept="image/*"
-            class="absolute inset-0 opacity-0 cursor-pointer rounded-full"
-            @change="handleAvatarChange"
+    <Card class="p-6 items-center gap-6">
+      <div class="flex justify-center w-full max-w-2xl">
+        <AvatarCarousel
+            :profile="props.profile"
+            v-model:selected="selectedAvatar"
         />
       </div>
 
-      <div class="w-full">
+      <!-- Name + Title form fields -->
+      <div class="flex flex-col md:flex-row w-full gap-6 mt-6 md:mt-0">
         <FormField v-slot="{ componentField }" name="full_name">
           <FormItem class="w-full">
             <FormLabel>Full Name</FormLabel>
@@ -139,7 +129,7 @@ const onSubmit = handleSubmit(async (values) => {
         </FormField>
 
         <FormField v-slot="{ componentField }" name="title">
-          <FormItem class="w-full mt-6">
+          <FormItem class="w-full">
             <FormLabel>Title</FormLabel>
             <FormControl>
               <Select v-bind="componentField">
