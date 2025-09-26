@@ -1,5 +1,5 @@
 import { useRouter, useRuntimeConfig } from '#app'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 export interface User {
   id: number
@@ -22,33 +22,42 @@ export function useAuth() {
   const role = computed(() => user.value?.role ?? null)
 
   const fetchUser = async (): Promise<User | null> => {
-    user.value = undefined // <-- mark as loading
+    user.value = undefined
     loading.value = true
     error.value = null
 
+    // Only access localStorage on the client
+    const getClientToken = () => {
+      if (process.client) {
+        return {
+          access: localStorage.getItem('access_token'),
+          refresh: localStorage.getItem('refresh_token'),
+        }
+      }
+      return { access: null, refresh: null }
+    }
+
     const getNewToken = async (): Promise<string> => {
-      const refreshToken = localStorage.getItem('refresh_token')
-      if (!refreshToken) throw new Error('No refresh token available')
+      const { refresh } = getClientToken()
+      if (!refresh) throw new Error('No refresh token available')
       const refreshResponse = await $fetch<{ access_token: string }>(
           `${config.public.apiBase}/auth/refresh`,
           {
             method: 'POST',
-            headers: { Authorization: `Bearer ${refreshToken}` },
+            headers: { Authorization: `Bearer ${refresh}` },
           }
       )
-      localStorage.setItem('access_token', refreshResponse.access_token)
+      if (process.client) localStorage.setItem('access_token', refreshResponse.access_token)
       return refreshResponse.access_token
     }
 
     try {
-      let token = localStorage.getItem('access_token')
-      const refreshToken = localStorage.getItem('refresh_token')
+      let { access: token, refresh: refreshToken } = getClientToken()
 
-      // 🚨 If there are no tokens at all → log them out immediately
       if (!token && !refreshToken) {
         user.value = null
-        loading.value = false  // ✅ stop loading
-        router.push('/login')
+        loading.value = false
+        if (process.client) router.push('/login')
         return null
       }
 
@@ -76,21 +85,23 @@ export function useAuth() {
       console.error('Error fetching user:', err)
       user.value = null
       error.value = err
-      router.push('/login')
+      if (process.client) router.push('/login')
       return null
     } finally {
-      loading.value = false  // ✅ always stop loading
+      loading.value = false
     }
   }
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      if (token) {
-        await $fetch(`${config.public.apiBase}/auth/logout`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        })
+      if (process.client) {
+        const token = localStorage.getItem('access_token')
+        if (token) {
+          await $fetch(`${config.public.apiBase}/auth/logout`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        }
       }
     } catch (err) {
       console.error('Error logging out:', err)
@@ -98,9 +109,11 @@ export function useAuth() {
       user.value = null
       error.value = null
       loading.value = false
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      router.push('/login')
+      if (process.client) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        router.push('/login')
+      }
     }
   }
 

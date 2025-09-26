@@ -64,24 +64,17 @@ async function onSubmit(event: Event) {
 
   try {
     // Register user
-    await $fetch(`/api/auth/register`, {
+    await $fetch(`${config.public.apiBase}/auth/register`, {
       method: 'POST',
       body: { full_name: full_name.value, email: email.value, student_number: student_number.value, password: password.value },
-      credentials: 'include',
-    })
-
-    // Automatically log in
-    await $fetch(`${config.public.apiBase}/auth/login`, {
-      method: 'POST',
-      body: { email: email.value, password: password.value },
       credentials: 'include',
     })
 
     // Fetch user profile into auth store
     await auth.fetchUser()
 
-    // Redirect to dashboard
-    router.push('/')
+    // Redirect to login
+    router.push('/login')
   }
   catch (err: any) {
     console.error('Registration error:', err)
