@@ -132,7 +132,7 @@ onMounted(() => {
     </div>
 
     <!-- Table container: scroll only inside -->
-    <div class="w-full max-w-[370px] overflow-x-auto rounded-lg shadow">
+    <div class="w-full max-w-[370px] sm:max-w-full overflow-x-auto rounded-lg shadow">
       <!-- Inner wrapper ensures table does not push the page -->
       <div class="inline-block min-w-full">
         <Table class="table-auto w-full">
