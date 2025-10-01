@@ -109,7 +109,7 @@ const onSubmit = handleSubmit(async (values) => {
   <form class="space-y-8" @submit="onSubmit">
     <!-- SECTION 1: Avatar + Name + Title -->
     <Card class="p-6 items-center gap-6">
-      <div class="flex justify-center w-full max-w-2xl">
+      <div class="flex justify-center w-full pb-8">
         <AvatarCarousel
             :profile="props.profile"
             v-model:selected="selectedAvatar"
@@ -117,7 +117,7 @@ const onSubmit = handleSubmit(async (values) => {
       </div>
 
       <!-- Name + Title form fields -->
-      <div class="flex flex-col md:flex-row w-full gap-6 mt-6 md:mt-0">
+      <div class="flex flex-col md:flex-row w-full gap-6 md:mt-0">
         <FormField v-slot="{ componentField }" name="full_name">
           <FormItem class="w-full">
             <FormLabel>Full Name</FormLabel>
@@ -186,49 +186,7 @@ const onSubmit = handleSubmit(async (values) => {
       </FormField>
     </Card>
 
-    <!-- SECTION 3: Class Details (Lecturer only) -->
-    <Card v-if="props.profile.role === 'lecturer'" class="p-6 space-y-6">
-      <h3 class="text-lg font-medium">Class Details</h3>
-
-      <div>
-        <p class="font-small">Subjects</p>
-        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 list-disc list-inside mt-2">
-          <li>CMPG111</li>
-          <li>MTHS115</li>
-        </ul>
-      </div>
-
-      <div class="flex items-center justify-between mt-4">
-        <div class="flex items-center gap-2">
-          <span class="font-small">Students</span>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <Icon
-                    name="i-lucide-info"
-                    class="w-4 h-4 text-neutral-500 cursor-pointer"
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Enroll students for each subject</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <div class="flex gap-2">
-          <Button variant="secondary" class="flex items-center gap-1">
-            <Icon name="i-lucide-upload" /> Upload student CSV
-          </Button>
-          <Button variant="secondary" class="flex items-center gap-1">
-            <Icon name="i-lucide-plus" /> Add student
-          </Button>
-        </div>
-      </div>
-    </Card>
-
-    <!-- SECTION 4: Personal Stats (Student only) -->
+    <!-- SECTION 3: Personal Stats (Student only) -->
     <Card v-if="props.profile.role === 'student'" class="p-6 space-y-6">
       <h3 class="text-lg font-medium">Personal Stats</h3>
 

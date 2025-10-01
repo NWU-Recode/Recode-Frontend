@@ -6,6 +6,7 @@ import Uploads from '~/components/dashboard/lecturer/Uploads.vue'
 import S_Analytics from '~/components/dashboard/student/S_Analytics.vue'
 import S_Overview from '~/components/dashboard/student/S_Overview.vue'
 import { useAuth } from '~/composables/useAuth'
+import A_Overview from "~/components/dashboard/admin/A_Overview.vue";
 
 const { user } = useAuth()
 </script>
@@ -15,6 +16,7 @@ const { user } = useAuth()
     <div v-if="activeTab === 'overview'">
       <S_Overview v-if="user?.role === 'student'" />
       <L_Overview v-else-if="user?.role === 'lecturer'" />
+      <A_Overview v-else-if="user?.role === 'admin'" />
     </div>
 
     <!-- Uploads Tab (Lecturer Only) -->

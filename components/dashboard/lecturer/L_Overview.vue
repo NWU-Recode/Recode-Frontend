@@ -14,6 +14,15 @@ const topics = [
 ]
 const selectedTopic = ref<string | null>(null)
 
+// === New: cards from API ===
+const cards = ref<any[]>([])
+
+async function fetchCards() {
+  // Replace with your actual endpoint
+  const res = await fetch("https://api.example.com/cards")
+  cards.value = await res.json()
+}
+
 // Monaco
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor
@@ -21,6 +30,7 @@ const selectedLanguage = ref('python')
 const colorMode = useColorMode()
 
 onMounted(() => {
+  fetchCards()
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
       value: `def hello():\n    print("Hello, world!")\n\nhello()`,
@@ -62,135 +72,24 @@ watch(selectedLanguage, (lang) => {
     </h2>
 
     <div class="grid mt-10 gap-6 lg:grid-cols-4 md:grid-cols-2 md:gap-8">
-      <!-- Card 1 -->
-      <Card class="h-40">
+      <!-- Render dynamically from API -->
+      <Card v-for="card in cards" :key="card.id" class="h-40">
         <CardContent class="h-full flex flex-col justify-center p-4">
           <!-- Header -->
           <div class="flex items-start justify-between">
-            <span class="text-sm">CMPG 111</span>
-            <span class="text-base font-semibold">If Statements</span>
+            <span class="text-sm">{{ card.course }}</span>
+            <span class="text-base font-semibold">{{ card.topic }}</span>
           </div>
 
           <!-- Icons row (flex, evenly spaced) -->
           <div class="mt-2 flex justify-between">
-            <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-            <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-            <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
+            <img v-for="(icon, i) in card.icons" :key="i" class="h-10 w-10" :src="icon" />
           </div>
 
-          <!-- Percentages row (flex, evenly spaced) -->
+          <!-- Percentages row -->
           <div class="mt-4 flex justify-between">
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">67</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">55</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">47</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <!-- Card 2 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <!-- Header -->
-          <div class="flex items-start justify-between">
-            <span class="text-sm">CMPG 111</span>
-            <span class="text-base font-semibold">Else Statements</span>
-          </div>
-
-          <!-- Icons row (flex, evenly spaced) -->
-          <div class="mt-2 flex justify-between">
-            <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-            <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-            <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-          </div>
-
-          <!-- Percentages row (flex, evenly spaced) -->
-          <div class="mt-4 flex justify-between">
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">55</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">37</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">12</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Card 3 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <!-- Header -->
-          <div class="flex items-start justify-between">
-            <span class="text-sm">CMPG 111</span>
-            <span class="text-base font-semibold">While Loops</span>
-          </div>
-
-          <!-- Icons row (flex, evenly spaced) -->
-          <div class="mt-2 flex justify-between">
-            <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-            <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-            <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-          </div>
-
-          <!-- Percentages row (flex, evenly spaced) -->
-          <div class="mt-4 flex justify-between">
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">55</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">45</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">12</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Card 4 -->
-      <Card class="h-40">
-        <CardContent class="h-full flex flex-col justify-center p-4">
-          <!-- Header -->
-          <div class="flex items-start justify-between">
-            <span class="text-sm">CMPG 111</span>
-            <span class="text-base font-semibold">Do-While Loops</span>
-          </div>
-
-          <!-- Icons row (flex, evenly spaced) -->
-          <div class="mt-2 flex justify-between">
-            <img class="h-10 w-10" src="/assets/flat-icons/bronze.png" alt="bronze">
-            <img class="h-10 w-10" src="/assets/flat-icons/silver.png" alt="silver">
-            <img class="h-10 w-10" src="/assets/flat-icons/gold.png" alt="gold">
-          </div>
-
-          <!-- Percentages row (flex, evenly spaced) -->
-          <div class="mt-4 flex justify-between">
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">34</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">17</span>
-              <span class="text-base font-semibold">%</span>
-            </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-semibold">6</span>
+            <div v-for="(percent, i) in card.percentages" :key="i" class="flex items-baseline gap-1">
+              <span class="text-lg font-semibold">{{ percent }}</span>
               <span class="text-base font-semibold">%</span>
             </div>
           </div>
@@ -199,17 +98,12 @@ watch(selectedLanguage, (lang) => {
     </div>
   </div>
 
-  <!--
-  <Button variant="outline" class="flex items-center gap-2 px-3 py-2">
-    <span class="text-sm font-medium">Next Question</span>
-  </Button>
-  -->
   <div class="mt-8 flex items-center justify-between">
     <DropdownMenu>
       <DropdownMenuTrigger
           class="min-w-[220px] px-4 py-2 border rounded-md shadow-sm cursor-pointer flex items-center justify-between"
       >
-        {{ selectedTopic || 'Select a topic to edit your challenges' }}
+        {{ selectedTopic || 'Select challenge topic' }}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
