@@ -82,7 +82,7 @@ async function uploadCsv(moduleCode, file) {
     await apiFetch(`/admin/${moduleCode}/enrol/batch`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${getToken()}` },
-      body: { student_ids: studentIds, semester_id: semesterId },
+      body: { student_numbers: studentIds, semester_id: semesterId },
     })
 
     await fetchStudents(moduleCode)
@@ -103,7 +103,7 @@ async function addStudent() {
       method: 'POST',
       headers: { Authorization: `Bearer ${getToken()}` },
       body: {
-        student_id: newStudentNumber.value,
+        student_number: newStudentNumber.value,
         semester_id: semesterId,
         status: 'active',
       },
@@ -207,7 +207,10 @@ onMounted(fetchModules)
   </div>
 
   <!-- Add Student Modal -->
-  <Dialog v-model:open="addStudentModalOpen">
+  <Dialog
+      :open="addStudentModalOpen"
+      @onOpenChange="val => addStudentModalOpen = val"
+  >
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Add Student</DialogTitle>
@@ -230,4 +233,5 @@ onMounted(fetchModules)
       </div>
     </DialogContent>
   </Dialog>
+
 </template>

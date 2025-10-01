@@ -101,13 +101,52 @@ onMounted(async () => {
   await fetchSlides();
   await fetchChallenges();
 });
+
+import { computed } from "vue";
+
+// reactive for current week
+const currentWeek = ref<number | null>(null);
+
+// derive current week from semester start date
+function calculateCurrentWeek() {
+  if (!modules.value.length) return;
+
+  // pick first module's semester start date
+  const firstModule = modules.value[0];
+  const startDateStr = firstModule.semester_start_date; // e.g., "2025-09-01"
+  if (!startDateStr) return;
+
+  const startDate = new Date(startDateStr);
+  const now = new Date();
+
+  // difference in days
+  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const week = Math.floor(diffDays / 7) + 1;
+
+  currentWeek.value = week >= 1 && week <= 12 ? week : null;
+}
+
+// call after modules are fetched
+onMounted(async () => {
+  await fetchModules();
+  calculateCurrentWeek();
+  await fetchSlides();
+  await fetchChallenges();
+});
+
 </script>
 
 <template>
   <div class="space-y-10">
+    <div class="mb-4">
+      <h2 class="text-xl font-semibold">
+        Current Week: <span v-if="currentWeek">{{ currentWeek }}</span><span v-else>N/A</span>
+      </h2>
+    </div>
+
     <!-- Slides Table -->
     <div>
-      <div class="flex justify-between py-4">
+      <div class="flex justify-between mb-4 items-center">
         <h3 class="text-lg font-semibold">Module Slides</h3>
         <Button variant="outline" class="flex items-center gap-2 px-3 py-2" @click="open = true">
           <span class="text-sm font-medium">New file upload</span>
@@ -192,15 +231,7 @@ onMounted(async () => {
                 <template #default>
                   <TableCell />
                   <TableCell colspan="2">{{ challenge.title }}</TableCell>
-                  <TableCell>{{ challenge.max_score }}</TableCell>
-                  <TableCell>
-                    <span v-if="!challenge.is_active">
-                      <Button size="sm" variant="outline" @click="publishChallenge(mod.code, challenge.id)">
-                        Publish challenge
-                      </Button>
-                    </span>
-                    <span v-else>Active</span>
-                  </TableCell>
+                  <TableCell /> <!-- week id / badge -->
                 </template>
               </TableRow>
             </template>
