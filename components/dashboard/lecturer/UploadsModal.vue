@@ -1,215 +1,266 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRuntimeConfig } from "#app";
 import { useAuth } from "@/composables/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Toggle } from "@/components/ui/toggle";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { useApiFetch } from "@/composables/useApiFetch";
 
 const emit = defineEmits<{
-  (e: "uploaded", payload: any): void;
+  (e: "uploaded", payload: any[]): void;
   (e: "close"): void;
-}>()
+}>();
 
-const config = useRuntimeConfig()
-const { user, isAuthenticated, fetchUser } = useAuth()
-const token = ref<string | null>(null)
+const config = useRuntimeConfig();
+const { user, isAuthenticated, fetchUser } = useAuth();
+const { apiFetch } = useApiFetch();
 
-const title = ref("");
-const topic = ref("");
-const schedule = ref(false);
-const dateTime = ref<string>(new Date().toISOString().slice(0, 16));
-const file = ref<File | null>(null);
-const isUploading = ref(false);
+const token = ref<string | null>(null);
+
+interface FileItem {
+  file: File;
+  subject: string;
+  title: string;
+  topic: string;
+  schedule: boolean;
+  scheduledAt: string;
+}
+const files: FileItem[] = reactive([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const isUploading = ref(false);
+
+// Modules fetched from API
+const modules = ref<string[]>([]);
 
 async function initAuth() {
   if (!isAuthenticated.value) {
-    const u = await fetchUser()
-    if (!u) return
+    const u = await fetchUser();
+    if (!u) return;
   }
-  token.value = localStorage.getItem('access_token')
+  token.value = localStorage.getItem("access_token");
+}
+initAuth();
+
+// Fetch modules from API
+async function fetchModules() {
+  if (!token.value) await initAuth();
+  if (!token.value) return;
+
+  try {
+    const res = await apiFetch("/admin/", {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+    // Assume res is an array of objects with `code` property
+    modules.value = res.map((m: any) => m.code);
+  } catch (err) {
+    console.error("Failed to fetch modules", err);
+  }
 }
 
-initAuth()
-
-function clearAll() {
-  title.value = "";
-  topic.value = "";
-  schedule.value = false;
-  dateTime.value = new Date().toISOString().slice(0, 16);
-  file.value = null;
-  if (fileInputRef.value) fileInputRef.value.value = "";
-}
-
-function onCancel() {
-  clearAll()
-  emit("close")
-}
-
-function onClear() {
-  if (isUploading.value) isUploading.value = false;
-  clearAll();
-}
+onMounted(() => {
+  fetchModules();
+});
 
 function onFileSelect(e: Event) {
   const target = e.target as HTMLInputElement;
   if (!target?.files?.length) return;
-  file.value = target.files[0];
+
+  for (const f of Array.from(target.files)) {
+    files.push({
+      file: f,
+      subject: modules.value[0] || "",
+      title: f.name.replace(/\.[^/.]+$/, ""),
+      topic: "",
+      schedule: false,
+      scheduledAt: new Date().toISOString().slice(0, 16),
+    });
+  }
+  if (fileInputRef.value) fileInputRef.value.value = "";
 }
 
-async function uploadFile() {
-  if (!file.value || !title.value.trim() || !topic.value.trim()) {
-    alert("Please fill in Title, Topic(s) and choose a file.");
-    return
+function removeFile(index: number) {
+  files.splice(index, 1);
+}
+
+function clearAll() {
+  files.splice(0, files.length);
+  if (fileInputRef.value) fileInputRef.value.value = "";
+}
+
+function onCancel() {
+  clearAll();
+  emit("close");
+}
+
+async function uploadAll() {
+  if (!files.length) {
+    alert("Please select files to upload.");
+    return;
+  }
+
+  for (const f of files) {
+    if (!f.subject || !f.title.trim() || !f.topic.trim()) {
+      alert("Please fill in Subject, Title, and Topic for all files.");
+      return;
+    }
   }
 
   if (!token.value) {
-    await initAuth()
+    await initAuth();
     if (!token.value) {
       alert("You must be logged in to upload slides");
-      return
+      return;
     }
   }
 
-  isUploading.value = true
+  isUploading.value = true;
+
   try {
-    const formData = new FormData()
-    formData.append("file", file.value)
+    const formData = new FormData();
+    for (const f of files) {
+      formData.append("files", f.file);
+    }
 
-    const params: Record<string, any> = {
-      topic_name: topic.value,
+    const params = {
+      module_code: files[0].subject,
       include_signed_url: true,
-      signed_ttl_sec: 900
-    }
-    if (schedule.value && dateTime.value) {
-      params.given_at_iso = new Date(dateTime.value).toISOString()
-    }
+      signed_ttl_sec: 900,
+    };
 
-    const result = await $fetch(`${config.public.apiBase}/slides/upload`, {
-      method: 'POST',
+    const result = await $fetch(`${config.public.apiBase}/slides/batch-upload`, {
+      method: "POST",
       body: formData,
       headers: {
-        Authorization: `Bearer ${token.value}`
+        Authorization: `Bearer ${token.value}`,
       },
-      params
-    })
+      params,
+    });
 
-    emit("uploaded", {
-      subject: title.value,
-      fileName: file.value.name,
-      uploadDate: schedule.value
-          ? dateTime.value.split("T")[0]
-          : new Date().toISOString().slice(0, 10),
-      topic: topic.value,
-      fileUrl: result?.signed_url ?? "#",
-      scheduled: schedule.value,
-      scheduledAt: schedule.value ? dateTime.value : null,
-    })
+    emit(
+        "uploaded",
+        files.map((f) => ({
+          subject: f.subject,
+          fileName: f.file.name,
+          uploadDate: f.schedule
+              ? f.scheduledAt.split("T")[0]
+              : new Date().toISOString().slice(0, 10),
+          topic: f.topic,
+          scheduled: f.schedule,
+          scheduledAt: f.schedule ? f.scheduledAt : null,
+          fileUrl: result?.signed_url ?? "#",
+        }))
+    );
 
-    clearAll()
-    emit("close") // close modal after successful upload
+    clearAll();
+    emit("close");
   } catch (err: any) {
-    console.error("Upload error:", err)
+    console.error("Batch upload error:", err);
     alert("Upload failed. Please try again.");
   } finally {
-    isUploading.value = false
+    isUploading.value = false;
   }
 }
-
-//TODO:add dropdown for subjects and show subjects the lecturer has
-//TODO:analuze the slides and show recommended title / topics in the input fields
 </script>
 
+
 <template>
-  <div class="flex flex-col gap-4 p-2 sm:p-6">
-    <!-- Upload Area -->
+  <div class="flex flex-col h-[80vh]">
+    <!-- Sticky file selection -->
     <div
-        class="border-2 border-dashed border-input rounded-2xl p-6 sm:p-10 text-center hover:bg-accent hover:border-accent-foreground transition cursor-pointer"
+        class="border-2 border-dashed border-input rounded-2xl p-6 sm:p-10 text-center
+             hover:bg-accent hover:border-accent-foreground transition cursor-pointer
+             sticky top-0 bg-background z-10"
         @click="fileInputRef?.click()"
     >
       <input
           type="file"
           ref="fileInputRef"
           class="hidden"
+          multiple
           @change="onFileSelect"
       />
-      <p class="font-semibold text-sm sm:text-base">
-        Drag here
-      </p>
-      <p class=" text-neutral-500 text-xs sm:text-sm">
-        or click to browse
-      </p>
-      <p v-if="file" class="mt-2 sm:mt-3 text-xs sm:text-sm">
-        Selected: {{ file.name }}
-      </p>
+      <p class="font-semibold text-sm sm:text-base">Drag here</p>
+      <p class="text-neutral-500 text-xs sm:text-sm">or click to browse</p>
     </div>
 
-    <!-- Slide details -->
-    <div class="border-t pt-3 sm:pt-4">
-      <h3 class=" font-semibold mb-2 text-sm sm:text-base">Slide details</h3>
-      <div class="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
-        <Label for="title" class="text-sm sm:text-base">Title</Label>
-        <Input
-            id="title"
-            v-model="title"
-            placeholder="Enter title"
-            class="w-full"
-        />
+    <!-- Scrollable cards section -->
+    <div class="flex-1 overflow-y-auto mt-4 space-y-4 px-1 sm:px-0">
+      <div
+          v-for="(f, i) in files"
+          :key="i"
+          class="border rounded-xl p-4 shadow flex flex-col gap-2 w-full"
+      >
+        <div class="flex justify-between items-start">
+          <h4 class="font-semibold truncate">File: {{ f.file.name }}</h4>
+          <Button variant="link" size="sm" @click="removeFile(i)">Remove</Button>
+        </div>
 
-        <Label for="topic" class="mt-2 text-sm sm:text-base">Topic(s)</Label>
-        <Input
-            id="topic"
-            v-model="topic"
-            placeholder="Enter topic(s)"
-            class="w-full"
-        />
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2">
+          <!-- Subject Dropdown -->
+          <div class="flex-1">
+            <Label>Subject</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                  class="w-full px-2 py-1 border rounded-md shadow-sm cursor-pointer flex items-center justify-between"
+              >
+                {{ f.subject || "Select a subject" }}
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent class="w-full">
+                <DropdownMenuItem
+                    v-for="subj in subjects"
+                    :key="subj"
+                    @click="f.subject = subj"
+                >
+                  {{ subj }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <!-- Title -->
+          <div class="flex-1">
+            <Label>Title</Label>
+            <Input v-model="f.title" placeholder="Enter title" />
+          </div>
+
+          <!-- Topic -->
+          <div class="flex-1">
+            <Label>Topic(s)</Label>
+            <Input v-model="f.topic" placeholder="Enter topic(s)" />
+          </div>
+        </div>
+
+        <!-- Schedule toggle + date input inline -->
+        <div class="flex items-center gap-2 mt-2">
+          <Toggle v-model:pressed="f.schedule" />
+          <Label>Schedule upload</Label>
+          <Input
+              v-if="f.schedule"
+              type="datetime-local"
+              v-model="f.scheduledAt"
+              class="ml-2 flex-1"
+          />
+        </div>
       </div>
     </div>
 
-    <!-- Schedule -->
-    <div class="border-t pt-3 sm:pt-4">
-      <h3 class=" font-semibold pb-2 text-sm sm:text-base">Upload details</h3>
-      <div class="flex items-center gap-2 pt-2 sm:pt-4">
-        <Toggle v-model:pressed="schedule" />
-        <Label for="schedule" class="text-sm sm:text-base">
-          Schedule upload
-        </Label>
-      </div>
-
-      <div v-if="schedule" class="mt-2 sm:mt-3">
-        <Input
-            type="datetime-local"
-            v-model="dateTime"
-            class="w-full"
-        />
-      </div>
-    </div>
-
-    <!-- Buttons -->
-    <div class="flex flex-col sm:flex-row py-2 sm:py-4 gap-2 sm:gap-3 w-full">
-      <Button
-          variant="link"
-          class="w-full sm:w-auto"
-          @click="onClear"
-      >
-        Clear
-      </Button>
-      <Button
-          variant="outline"
-          class="w-full sm:w-auto"
-          @click="onCancel"
-      >
-        Cancel
-      </Button>
-
-      <Button
-          class="w-full sm:w-auto"
-          @click="uploadFile"
-          :disabled="isUploading"
-      >
-        {{ isUploading ? "Uploading..." : "Upload" }}
+    <!-- Buttons at bottom (outside scrollable section) -->
+    <div class="flex flex-col sm:flex-row gap-2 mt-2 bg-background p-2 sm:p-0">
+      <Button variant="link" @click="clearAll" class="w-full sm:w-auto">Clear</Button>
+      <Button variant="outline" @click="onCancel" class="w-full sm:w-auto">Cancel</Button>
+      <Button @click="uploadAll" :disabled="isUploading" class="w-full sm:w-auto">
+        {{ isUploading ? "Uploading..." : "Upload All" }}
       </Button>
     </div>
   </div>
 </template>
+
