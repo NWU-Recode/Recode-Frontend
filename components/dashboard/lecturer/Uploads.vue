@@ -96,7 +96,7 @@ async function fetchChallenges() {
       challengesByModule[mod.code] = res.map((c: any) => ({
         ...c,
         displayWeek:
-            c.challenge_type === 'weekly' ? c.week_number : c.trigger_event?.week || null,
+            c.challenge_type === 'weekly' ? c.week_number : c.week_number || null,
         tierIcon:
             c.challenge_type === 'special'
                 ? c.tier === 'ruby'
@@ -130,29 +130,30 @@ onMounted(async () => {
 // reactive for current week
 const currentWeek = ref<number | null>(null);
 
-// derive current week from semester start date
-function calculateCurrentWeek() {
-  if (!modules.value.length) return;
+async function fetchCurrentWeek() {
+  if (!token.value) await initAuth();
+  if (!token.value) return;
 
-  // pick first module's semester start date
-  const firstModule = modules.value[0];
-  const startDateStr = firstModule.semester_start_date; // e.g., "2025-09-01"
-  if (!startDateStr) return;
+  try {
+    const res = await apiFetch("/dashboard/current-week", {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
 
-  const startDate = new Date(startDateStr);
-  const now = new Date();
-
-  // difference in days
-  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const week = Math.floor(diffDays / 7) + 1;
-
-  currentWeek.value = week >= 1 && week <= 12 ? week : null;
+    if (res && typeof res.current_week === "number") {
+      currentWeek.value = res.current_week;
+    } else {
+      currentWeek.value = null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch current week:", err);
+    currentWeek.value = null;
+  }
 }
 
 // call after modules are fetched
 onMounted(async () => {
   await fetchModules();
-  calculateCurrentWeek();
+  await fetchCurrentWeek();
   await fetchSlides();
   await fetchChallenges();
 });
@@ -180,17 +181,19 @@ onMounted(async () => {
         <TableHeader>
           <TableRow>
             <TableHead />
-            <TableHead>Module Name</TableHead>
             <TableHead>Module Code</TableHead>
+            <TableHead>Module Name</TableHead>
             <TableHead>Slides Count</TableHead>
+            <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="mod in modules" :key="mod.id" collapsible>
             <template #default>
-              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ mod.code }}</TableCell>
+              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ slidesByModule[mod.code]?.length || 0 }}</TableCell>
+              <TableCell />
             </template>
 
             <template #expanded>
@@ -202,6 +205,7 @@ onMounted(async () => {
                 <template #default>
                   <TableCell />
                   <TableCell colspan="1">{{ slide.filename }}</TableCell>
+                  <TableCell>{{slide.detected_topic}}</TableCell>
                   <TableCell>Week: {{ slide.week_number }}</TableCell>
                   <TableCell>
                     <Button

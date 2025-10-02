@@ -38,14 +38,35 @@ const badges = ref<Record<string, number>>({
 const leaderboard = ref<any[]>([])
 
 // Fetch badges for current student
-const fetchBadges = async () => {
+// --- Fetch badges for the logged-in student ---
+async function fetchBadges() {
   try {
-    const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch('/badges')
-    res.forEach((b) => {
-      if (badgeIcons[b.badge_type.toLowerCase()]) {
-        badges.value[b.badge_type.toLowerCase()] = b.badge_count
-      }
-    })
+    // Get all modules visible to this student
+    const modulesRes: Array<{ code: string }> = await apiFetch('/admin/')
+    const moduleCodes: string[] = modulesRes.map((m) => m.code)
+
+    // Reset counts
+    badges.value = {
+      bronze: 0,
+      silver: 0,
+      gold: 0,
+      ruby: 0,
+      emerald: 0,
+      diamond: 0,
+    }
+
+    // Fetch badges for each module
+    for (const moduleCode of moduleCodes) {
+      const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch(
+          `/badges?module_code=${moduleCode}`
+      )
+      res.forEach((b) => {
+        const type = b.badge_type.toLowerCase()
+        if (badges.value[type] !== undefined) {
+          badges.value[type] += b.badge_count
+        }
+      })
+    }
   } catch (err) {
     console.error('Failed to fetch badges:', err)
   }

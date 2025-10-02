@@ -24,7 +24,7 @@ const props = defineProps<{
     phone?: string
     bio?: string
     avatar_url?: string | null
-    title?: string
+    title_name?: string
     role: 'student' | 'lecturer'
   }
   setPageLoading?: (val: boolean) => void
@@ -38,7 +38,6 @@ const profileFormSchema = toTypedSchema(
       phone: z.string().optional(),
       bio: z.string().max(160).optional(),
       avatar_url: z.string().url().optional(),
-      title: z.string().optional(),
     })
 )
 
@@ -51,7 +50,6 @@ const { handleSubmit, resetForm, setValues } = useForm({
     phone: '',
     bio: '',
     avatar_url: '',
-    title: '',
   },
 })
 
@@ -88,38 +86,48 @@ const badges = ref<Record<string, number>>({
   diamond: 0,
 })
 
-// --- Fetch badges ---
-const fetchBadges = async () => {
-  if (props.profile.role !== 'student') return
+// --- Fetch badges for the logged-in student ---
+async function fetchBadgesForStudent() {
   try {
-    const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch('/badges')
-    res.forEach((b) => {
-      if (badgeIcons[b.badge_type.toLowerCase()]) {
-        badges.value[b.badge_type.toLowerCase()] = b.badge_count
-      }
-    })
+    // Get all modules visible to this student
+    const modulesRes: Array<{ code: string }> = await apiFetch('/admin/')
+    const moduleCodes: string[] = modulesRes.map((m) => m.code)
+
+    // Reset counts
+    badges.value = {
+      bronze: 0,
+      silver: 0,
+      gold: 0,
+      ruby: 0,
+      emerald: 0,
+      diamond: 0,
+    }
+
+    // Fetch badges for each module
+    for (const moduleCode of moduleCodes) {
+      const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch(
+          `/badges?module_code=${moduleCode}`
+      )
+      res.forEach((b) => {
+        const type = b.badge_type.toLowerCase()
+        if (badges.value[type] !== undefined) {
+          badges.value[type] += b.badge_count
+        }
+      })
+    }
   } catch (err) {
     console.error('Failed to fetch badges:', err)
   }
 }
 
+
 // --- Watch profile prop for changes ---
 watch(
     () => props.profile,
     (newProfile) => {
-      resetForm({
-        values: {
-          full_name: newProfile.full_name ?? '',
-          email: newProfile.email ?? '',
-          phone: newProfile.phone ?? '',
-          bio: newProfile.bio ?? '',
-          avatar_url: newProfile.avatar_url ?? '',
-          title: newProfile.title ?? '',
-        },
-      })
-      avatarPreview.value = newProfile.avatar_url ?? null
-      props.setPageLoading?.(false)
-      fetchBadges()
+      if (newProfile.role === 'student' && newProfile.id) {
+        fetchBadgesForStudent(newProfile.id.toString())
+      }
     },
     { immediate: true }
 )
@@ -182,26 +190,6 @@ async function onSubmit(values: typeof profileFormSchema._type) {
             <FormMessage />
           </FormItem>
         </FormField>
-
-        <FormField v-if="props.profile.role === 'student'" v-slot="{ componentField }" name="title">
-          <FormItem class="w-full">
-            <FormLabel>Title</FormLabel>
-            <FormControl>
-              <Select v-bind="componentField">
-                <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select a title" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="ms">Sorcerer Developer</SelectItem>
-                    <SelectItem value="dr">Master Developer</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
       </div>
     </Card>
 
@@ -259,7 +247,7 @@ async function onSubmit(values: typeof profileFormSchema._type) {
 
         <div class="flex flex-col items-end md:ml-6">
           <span class="text-sm text-neutral-500">Awarded title</span>
-          <span class="text-2xl font-medium">{{ props.profile.title || 'Trainee' }}</span>
+          <span class="text-2xl font-medium">{{ props.profile.title_name || 'Trainee' }}</span>
         </div>
       </div>
     </Card>

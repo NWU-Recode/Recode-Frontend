@@ -46,6 +46,9 @@ function editModule(mod) {
 }
 
 async function deleteModule(mod) {
+  const confirmed = window.confirm(`Are you sure you want to delete the module "${mod.name}"? This action cannot be undone.`)
+  if (!confirmed) return
+
   try {
     await apiFetch(`/admin/modules/${mod.id}`, { method: 'DELETE' })
     await fetchModules()

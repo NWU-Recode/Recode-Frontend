@@ -184,7 +184,7 @@ onMounted(() => {
         <Button variant="outline" :leftIcon="ChevronLeft">Previous</Button>
         <span class="p-2">Question 1</span>
         <Button variant="outline" :rightIcon="ChevronRight">Next</Button>
-        <Button variant="outline" :leftIcon="Send">Submit</Button>
+        <Button variant="outline" :leftIcon="Send" disabled>Submit</Button>
       </div>
     </div>
 
