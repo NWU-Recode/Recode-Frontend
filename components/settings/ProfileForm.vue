@@ -4,10 +4,17 @@ import { useForm } from 'vee-validate'
 import { ref, watch, defineProps } from 'vue'
 import * as z from 'zod'
 import { toast } from '~/components/ui/toast'
-import Avatar from '~/components/ui/avatar/Avatar.vue'
-import { AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import AvatarCarousel from '~/components/ui/avatar/AvatarCarousel.vue'
-import { useRuntimeConfig } from '#app'
+import { useApiFetch } from '@/composables/useApiFetch'
+
+import bronzeIcon from '~/assets/flat-icons/bronze.png'
+import silverIcon from '~/assets/flat-icons/silver.png'
+import goldIcon from '~/assets/flat-icons/gold.png'
+import rubyIcon from '~/assets/flat-icons/ruby.png'
+import emeraldIcon from '~/assets/flat-icons/emerald.png'
+import diamondIcon from '~/assets/flat-icons/diamond.png'
+
+const { apiFetch } = useApiFetch()
 
 // --- Props ---
 const props = defineProps<{
@@ -22,8 +29,6 @@ const props = defineProps<{
   }
   setPageLoading?: (val: boolean) => void
 }>()
-
-const config = useRuntimeConfig()
 
 // --- Validation schema ---
 const profileFormSchema = toTypedSchema(
@@ -50,6 +55,8 @@ const { handleSubmit, resetForm, setValues } = useForm({
   },
 })
 
+const submitForm = handleSubmit(onSubmit)
+
 const avatarOptions = Array.from({ length: 18 }, (_, i) => `/avatars/avatar${i + 1}.jpeg`)
 const selectedAvatar = ref<string | null>(props.profile.avatar_url ?? null)
 const avatarPreview = ref<string | null>(props.profile.avatar_url ?? null)
@@ -60,6 +67,41 @@ watch(selectedAvatar, (url) => {
 })
 
 const submitting = ref(false)
+
+// --- Badge icons mapping ---
+const badgeIcons: Record<string, string> = {
+  bronze: bronzeIcon,
+  silver: silverIcon,
+  gold: goldIcon,
+  ruby: rubyIcon,
+  emerald: emeraldIcon,
+  diamond: diamondIcon,
+}
+
+// Badge counts
+const badges = ref<Record<string, number>>({
+  bronze: 0,
+  silver: 0,
+  gold: 0,
+  ruby: 0,
+  emerald: 0,
+  diamond: 0,
+})
+
+// --- Fetch badges ---
+const fetchBadges = async () => {
+  if (props.profile.role !== 'student') return
+  try {
+    const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch('/badges')
+    res.forEach((b) => {
+      if (badgeIcons[b.badge_type.toLowerCase()]) {
+        badges.value[b.badge_type.toLowerCase()] = b.badge_count
+      }
+    })
+  } catch (err) {
+    console.error('Failed to fetch badges:', err)
+  }
+}
 
 // --- Watch profile prop for changes ---
 watch(
@@ -77,19 +119,35 @@ watch(
       })
       avatarPreview.value = newProfile.avatar_url ?? null
       props.setPageLoading?.(false)
+      fetchBadges()
     },
     { immediate: true }
 )
 
 // --- Submit handler ---
-const onSubmit = handleSubmit(async (values) => {
+async function onSubmit(values: typeof profileFormSchema._type) {
   submitting.value = true
   try {
-    await $fetch(`${config.public.apiBase}/profiles/me`, {
-      method: 'PUT',
-      credentials: 'include',
-      body: values,
+    let endpoint = ''
+    let method: 'PUT' | 'PATCH' = 'PATCH'
+
+    if (props.profile.role === 'student') {
+      endpoint = '/student/me'
+      method = 'PATCH'
+    } else if (props.profile.role === 'lecturer') {
+      endpoint = '/admin/me'
+      method = 'PUT'
+    }
+
+    // Remove email if readonly
+    const payload = { ...values }
+    delete payload.email
+
+    await apiFetch(endpoint, {
+      method,
+      body: payload,
     })
+
     toast({
       title: 'Profile updated',
       description: 'Your profile changes were saved successfully.',
@@ -102,18 +160,15 @@ const onSubmit = handleSubmit(async (values) => {
   } finally {
     submitting.value = false
   }
-})
+}
 </script>
 
 <template>
-  <form class="space-y-8" @submit="onSubmit">
+  <form class="space-y-8" @submit.prevent="submitForm">
     <!-- SECTION 1: Avatar + Name + Title -->
     <Card class="p-6 items-center gap-6">
       <div class="flex justify-center w-full pb-8">
-        <AvatarCarousel
-            :profile="props.profile"
-            v-model:selected="selectedAvatar"
-        />
+        <AvatarCarousel v-model:selected="selectedAvatar" :profile="props.profile" />
       </div>
 
       <!-- Name + Title form fields -->
@@ -128,7 +183,7 @@ const onSubmit = handleSubmit(async (values) => {
           </FormItem>
         </FormField>
 
-        <FormField v-slot="{ componentField }" name="title">
+        <FormField v-if="props.profile.role === 'student'" v-slot="{ componentField }" name="title">
           <FormItem class="w-full">
             <FormLabel>Title</FormLabel>
             <FormControl>
@@ -190,41 +245,15 @@ const onSubmit = handleSubmit(async (values) => {
     <Card v-if="props.profile.role === 'student'" class="p-6 space-y-6">
       <h3 class="text-lg font-medium">Personal Stats</h3>
 
-      <div>
-        <p class="font-small">Subjects</p>
-        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 list-disc list-inside mt-2">
-          <li>CMPG111</li>
-          <li>MTHS115</li>
-          <li>CMPG113</li>
-          <li>PHSC111</li>
-        </ul>
-      </div>
-
       <div class="flex flex-col md:flex-row items-center md:items-start justify-between mt-8">
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-6 mb-6 md:mb-0">
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/bronze.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">2</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/silver.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">1</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/gold.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">0</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/ruby.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">1</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/emerald.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">0</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <img src="/assets/flat-icons/diamond.png" class="w-14 h-14" alt="" />
-            <span class="text-lg mt-1">0</span>
+          <div
+              v-for="(icon, index) in Object.keys(badgeIcons)"
+              :key="index"
+              class="flex flex-col items-center"
+          >
+            <img :src="badgeIcons[icon]" class="w-14 h-14" alt="" />
+            <span class="text-lg mt-1">{{ badges[icon] || 0 }}</span>
           </div>
         </div>
 
@@ -244,4 +273,3 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </form>
 </template>
-

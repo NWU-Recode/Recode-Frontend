@@ -30,14 +30,24 @@ export function useApiFetch() {
      */
     const apiFetch = async <T = any>(url: string, options: any = {}): Promise<T> => {
         let token = getAccessToken()
-
         const doFetch = async (accessToken?: string) => {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+                Authorization: `Bearer ${accessToken ?? token}`,
+            }
+
+            const method = (options.method || 'GET').toUpperCase()
+
+            const body =
+                method === 'GET' || method === 'HEAD'
+                    ? undefined
+                    : JSON.stringify(options.body ?? {})
+
             return await $fetch<T>(`${config.public.apiBase}${url}`, {
                 ...options,
-                headers: {
-                    ...(options.headers || {}),
-                    Authorization: `Bearer ${accessToken ?? token}`,
-                },
+                headers,
+                body,
             })
         }
 
@@ -46,7 +56,6 @@ export function useApiFetch() {
             return await doFetch(token)
         } catch (err: any) {
             if (err?.response?.status === 401) {
-                // retry with new token
                 token = await refreshAccessToken()
                 return await doFetch(token)
             }
