@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import aiRobotBrain from '~/assets/lottie/ai-robot-brain.json'
 import aiBrainBoard from '~/assets/lottie/ai-brain-board.json'
 import designersBrain from '~/assets/lottie/designers-brain.json'
@@ -20,6 +20,26 @@ onMounted(() => {
     }
   })
 })
+
+// --- Responsive size ---
+const animationSize = ref({ width: 450, height: 450 })
+
+function updateSize() {
+  const width = window.innerWidth
+  if (width < 640) {          // small screens
+    animationSize.value = { width: 250, height: 250 }
+  } else if (width < 1024) {  // medium screens
+    animationSize.value = { width: 350, height: 350 }
+  } else {                     // large screens
+    animationSize.value = { width: 450, height: 450 }
+  }
+}
+
+onMounted(() => {
+  updateSize()
+  window.addEventListener('resize', updateSize)
+})
+
 </script>
 
 <template>
@@ -27,8 +47,8 @@ onMounted(() => {
     <div class="loader-container fade">
       <Vue3Lottie
           :animationData="selectedAnimation"
-          :height="450"
-          :width="450"
+          :height="animationSize.height"
+          :width="animationSize.width"
           :loop="true"
           :autoPlay="true"
       />
@@ -50,10 +70,5 @@ onMounted(() => {
 
 .loader-container.fade-leave-active {
   opacity: 0;
-}
-p {
-  margin-top: 1rem;
-  font-size: 1.2rem;
-  color: var(--text-color, #555);
 }
 </style>
