@@ -10,6 +10,7 @@ const { apiFetch } = useApiFetch()
 
 // State
 const semester = ref(null)
+const modules = ref([]) // store all modules
 const showSemesterModal = ref(false)
 const showModuleModal = ref(false)
 const selectedModule = ref(null)
@@ -21,6 +22,15 @@ async function fetchSemester() {
     semester.value = res[0] || null
   } catch (err) {
     console.error('Failed to fetch semesters', err)
+  }
+}
+
+// Fetch all modules
+async function fetchModules() {
+  try {
+    modules.value = await apiFetch('/admin/modules')
+  } catch (err) {
+    console.error('Failed to fetch modules', err)
   }
 }
 
@@ -37,8 +47,8 @@ function editModule(mod) {
 
 async function deleteModule(mod) {
   try {
-    await apiFetch(`/admin/${mod.id}`, { method: 'DELETE' })
-    await fetchSemester()
+    await apiFetch(`/admin/modules/${mod.id}`, { method: 'DELETE' })
+    await fetchModules()
   } catch (err) {
     console.error('Failed to delete module', err)
   }
@@ -49,7 +59,10 @@ function closeModuleModal() {
 }
 
 // Initial fetch
-onMounted(fetchSemester)
+onMounted(async () => {
+  await fetchSemester()
+  await fetchModules()
+})
 </script>
 
 <template>
@@ -78,32 +91,32 @@ onMounted(fetchSemester)
         {{ semester.start_date }} → {{ semester.end_date }}
         <span v-if="semester.is_current" class="ml-2 text-green-600 font-medium">(Current)</span>
       </p>
-
-      <!-- Modules Table -->
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Code</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Credits</TableHead>
-            <TableHead class="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow v-for="mod in semester.modules" :key="mod.id">
-            <TableCell>{{ mod.code }}</TableCell>
-            <TableCell>{{ mod.name }}</TableCell>
-            <TableCell>{{ mod.credits }}</TableCell>
-            <TableCell class="text-right">
-              <div class="flex gap-2 justify-end">
-                <Button size="sm" @click="editModule(mod)">Edit</Button>
-                <Button size="sm" variant="destructive" @click="deleteModule(mod)">Delete</Button>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
     </div>
+
+    <!-- Modules Table -->
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Code</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Credits</TableHead>
+          <TableHead class="text-center">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow v-for="mod in modules" :key="mod.id">
+          <TableCell>{{ mod.code }}</TableCell>
+          <TableCell>{{ mod.name }}</TableCell>
+          <TableCell>{{ mod.lecturer_id }}</TableCell>
+          <TableCell class="text-center">
+            <div class="flex gap-2 justify-center">
+              <Button size="sm" variant="secondary" @click="editModule(mod)">Edit</Button>
+              <Button size="sm" variant="destructive" @click="deleteModule(mod)">Delete</Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
 
     <!-- Module Modal -->
     <AddModule
@@ -111,7 +124,7 @@ onMounted(fetchSemester)
         :module="selectedModule"
         :semester-id="semester?.id"
         @close="closeModuleModal"
-        @saved="fetchSemester"
+        @saved="fetchModules"
     />
 
     <!-- Add Semester Modal -->
