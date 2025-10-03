@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useRouter } from 'vue-router'
 import { useApiFetch } from '@/composables/useApiFetch'
 import bronzeIcon from '~/assets/flat-icons/bronze.png'
 import silverIcon from '~/assets/flat-icons/silver.png'
@@ -10,6 +11,16 @@ import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
 
 const { apiFetch } = useApiFetch()
+
+const router = useRouter()
+
+const goToChallenge = (challenge: any) => {
+  // Store challengeId (and maybe module/week) so coding challenge view can fetch questions
+  localStorage.setItem('currentChallengeId', challenge.challenge_id)
+
+  // Navigate to coding challenge view
+  router.push('/coding-challenge')
+}
 
 // Badge tiers and question counts per weekly challenge
 const weeklySteps = [
@@ -131,6 +142,7 @@ onMounted(async () => {
           v-for="challenge in challenges"
           :key="challenge.challenge_id"
           class="h-auto sm:h-52 sm:min md:h-56 lg:h-60"
+          @click="goToChallenge(challenge)"
       >
         <CardContent class="h-full flex flex-col justify-center p-4">
           <!-- Header -->
@@ -228,18 +240,21 @@ onMounted(async () => {
                   <TableRow
                       v-for="challenge in challengesByModule[mod.code] || []"
                       :key="challenge.challenge_id"
-                      class="bg-muted/20"
+                      class="bg-muted/20 hover:bg-muted/40 cursor-pointer"
                   >
                     <template #default>
-                      <TableCell />
-                      <TableCell colspan="2">{{ challenge.challenge_name }}</TableCell>
-                      <TableCell>Week {{ challenge.week_number ?? '-' }}</TableCell>
-                      <TableCell>
-                        <span>{{ challenge.completedQuestions }} / {{ challenge.totalQuestions }}</span>
-                        <span class="ml-6">{{ challenge.challenge_completion_rate }}%</span>
-                      </TableCell>
+                      <div class="contents" @click="goToChallenge(challenge)">
+                        <TableCell />
+                        <TableCell colspan="2">{{ challenge.challenge_name }}</TableCell>
+                        <TableCell>Week {{ challenge.week_number ?? '-' }}</TableCell>
+                        <TableCell>
+                          <span>{{ challenge.completedQuestions }} / {{ challenge.totalQuestions }}</span>
+                          <span class="ml-6">{{ challenge.challenge_completion_rate }}%</span>
+                        </TableCell>
+                      </div>
                     </template>
                   </TableRow>
+
                 </template>
               </TableRow>
             </TableBody>
