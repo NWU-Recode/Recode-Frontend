@@ -81,9 +81,23 @@ const fetchLeaderboard = async () => {
   }
 }
 
+// Reactive variable for the current student's title
+const title_name = ref('');
+
+// Fetch current user profile
+const fetchProfile = async () => {
+  try {
+    const profile = await apiFetch('/profiles/me')
+    title_name.value = profile.title_name || 'No Title'
+  } catch (err) {
+    console.error('Failed to fetch profile:', err)
+  }
+}
+
 onMounted(() => {
   fetchBadges()
   fetchLeaderboard()
+  fetchProfile()
 })
 
 // Compute podium + rest
@@ -128,7 +142,7 @@ const restStudents = computed(() => leaderboard.value.slice(3))
           <span class="text-sm">Awarded Title</span>
         </div>
         <div class="flex justify-center mt-2">
-          <span class="text-3xl sm:text-4xl font-semibold">Sorcerer</span>
+          <span class="text-3xl sm:text-4xl font-semibold">{{ title_name }}</span>
         </div>
       </CardContent>
     </Card>

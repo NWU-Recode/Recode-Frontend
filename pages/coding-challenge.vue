@@ -1,90 +1,92 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import * as monaco from 'monaco-editor'
+import { useRouter } from 'vue-router'
+import { useApiFetch } from '@/composables/useApiFetch'
 import { ChevronLeft, ChevronRight, Timer, BugPlay, Send, BookOpenText, NotebookPen, CodeXml, CircleCheck } from 'lucide-vue-next'
 
-const title = 'Coding Challenge'
-const colorMode = useColorMode()
+const { apiFetch } = useApiFetch()
 
-// Example question state
-const currentQuestion = 0
-const totalQuestions = 5
+// State
+const questions = ref<any[]>([])
+const currentQuestionIndex = ref(0)
+const loading = ref(true)
 
-// Toggles for description/notes
+// Per-question notes
+const questionNotes = ref<string[]>([])
+watch(currentQuestionIndex, (idx) => {
+  // Ensure notes array has entry for current question
+  if (questionNotes.value[idx] === undefined) questionNotes.value[idx] = ''
+})
+
+
 const showDescription = ref(true)
 const showNotes = ref(false)
 
-// Section 2 & 3 heights
-const section2Height = ref(60) // in percent
-const section3Height = ref(40) // in percent
+const section2Height = ref(60)
+const section3Height = ref(40)
 
-// Resizer variables
-let startY = 0
-let startSection2 = 0
-
-function onMouseDown(e: MouseEvent) {
-  startY = e.clientY
-  startSection2 = section2Height.value
-  window.addEventListener('mousemove', onMouseMove)
-  window.addEventListener('mouseup', onMouseUp)
-}
-
-function onMouseMove(e: MouseEvent) {
-  const delta = e.clientY - startY
-  const container = e.currentTarget?.parentElement
-  const containerHeight = container?.offsetHeight || 500
-  const deltaPercent = (delta / containerHeight) * 100
-  let newHeight = startSection2 + deltaPercent
-  newHeight = Math.min(Math.max(newHeight, 10), 90)
-  section2Height.value = newHeight
-  section3Height.value = 100 - newHeight
-}
-
-function onMouseUp() {
-  window.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('mouseup', onMouseUp)
-}
-
-// Monaco Editor
+const selectedLanguage = 'python'
 const editorContainer = ref<HTMLDivElement | null>(null)
-let editor: monaco.editor.IStandaloneCodeEditor
-const selectedLanguage = ref('python') // default
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
 
+// --- Fetch questions from backend ---
+async function fetchQuestions() {
+  try {
+    const challengeId = localStorage.getItem('currentChallengeId')
+    if (!challengeId) return
+
+    // Use composable if you have one, or full API URL
+    const data = await apiFetch(`/challenges/${challengeId}/questions`)
+    questions.value = data.items || []
+
+    if (questions.value.length > 0 && editor) {
+      editor.setValue(questions.value[0].starter_code || '')
+    }
+
+  } catch (err) {
+    console.error('Failed to load questions', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// --- Current Question Computed ---
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
+
+// --- Navigation ---
+function nextQuestion() {
+  if (currentQuestionIndex.value < questions.value.length - 1) {
+    currentQuestionIndex.value++
+    loadCurrentQuestionIntoEditor()
+  }
+}
+function prevQuestion() {
+  if (currentQuestionIndex.value > 0) {
+    currentQuestionIndex.value--
+    loadCurrentQuestionIntoEditor()
+  }
+}
+function loadCurrentQuestionIntoEditor() {
+  if (!editor || !currentQuestion.value) return
+  editor.setValue(currentQuestion.value.starter_code || '')
+}
+
+// --- Monaco Init ---
 onMounted(() => {
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
-      value: `def hello():\n    print("Hello, world!")\n\nhello()`,
-      language: selectedLanguage.value,
+      value: '',
+      language: 'python',
       theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light',
       automaticLayout: true,
     })
   }
+  fetchQuestions()
 })
 
-// Watch theme changes
-watch(
-    () => colorMode.preference,
-    (preference) => {
-      if (!editor) return
-      let theme = 'vs-light'
-      if (preference === 'dark') theme = 'vs-dark'
-      else if (preference === 'light') theme = 'vs-light'
-      else if (preference === 'system') {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs-light'
-      }
-      monaco.editor.setTheme(theme)
-    },
-    { immediate: true }
-)
-
-// Watch language changes
-watch(selectedLanguage, (lang) => {
-  if (!editor) return
-  const value = editor.getValue()
-  const model = monaco.editor.createModel(value, lang)
-  editor.setModel(model)
-})
 </script>
+
 
 <template>
   <div class="flex w-full h-screen">
@@ -93,9 +95,14 @@ watch(selectedLanguage, (lang) => {
       <!-- Top Buttons -->
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center gap-2">
-          <span>Question 1</span>
-          <Button variant="outline" :leftIcon="ChevronLeft" :disabled="currentQuestion === 0">Previous</Button>
-          <Button variant="outline" :rightIcon="ChevronRight" :disabled="currentQuestion === totalQuestions - 1">Next</Button>
+          <span>Question {{ currentQuestion?.question_number || currentQuestionIndex + 1 }}</span>
+          <Button variant="outline" :leftIcon="ChevronLeft" :disabled="currentQuestionIndex === 0" @click="prevQuestion">
+            Previous
+          </Button>
+          <Button variant="outline" :rightIcon="ChevronRight" :disabled="currentQuestionIndex === questions.length - 1" @click="nextQuestion">
+            Next
+          </Button>
+
         </div>
 
         <div class="flex items-center gap-2">
@@ -136,12 +143,61 @@ watch(selectedLanguage, (lang) => {
             </button>
           </div>
 
-          <div class="flex-1 overflow-auto">
-            <div v-if="showDescription">
-              <p>Question details will go here</p>
+          <!-- Content -->
+          <div class="flex-1 overflow-auto p-2">
+            <div v-if="currentQuestion" class="space-y-4">
+              <!-- Description Tab -->
+              <div v-if="showDescription">
+                <!-- Question Header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-bold text-purple-600">
+                    Question {{ currentQuestionIndex + 1 }}:
+                  </h3>
+                  <span class="text-sm font-medium text-gray-500">
+                    Tier: {{ currentQuestion.tier }}
+                  </span>
+                </div>
+
+                <!-- Problem Statement -->
+                <div class="border-gray-200 dark:border-neutral-700 rounded-md p-4 shadow-sm">
+                  <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                    {{ currentQuestion.prompt }}
+                  </p>
+                </div>
+
+                <!-- Input / Output Examples -->
+                <div v-if="currentQuestion.examples?.length" class="space-y-2">
+                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Examples:</h4>
+                  <div v-for="(ex, idx) in currentQuestion.examples" :key="idx" class="bg-gray-100 dark:bg-neutral-700 rounded-md p-3 border border-gray-200 dark:border-neutral-600">
+                    <p><span class="font-semibold">Input:</span></p>
+                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.input }}</pre>
+                    <p class="mt-1"><span class="font-semibold">Output:</span></p>
+                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.output }}</pre>
+                  </div>
+                </div>
+
+                <!-- Constraints -->
+                <div v-if="currentQuestion.constraints?.length" class="mt-2">
+                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Constraints:</h4>
+                  <ul class="list-disc list-inside text-gray-800 dark:text-gray-200">
+                    <li v-for="(c, i) in currentQuestion.constraints" :key="i">{{ c }}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Notes Tab -->
+              <div v-else-if="showNotes" class="flex flex-col h-full">
+                <textarea
+                    v-model="questionNotes[currentQuestionIndex]"
+                    class="flex-1 w-full rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Write your notes here..."
+                ></textarea>
+              </div>
             </div>
-            <div v-else-if="showNotes">
-              <p>You can make additional notes here</p>
+
+            <!-- No question loaded -->
+            <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              No question loaded
             </div>
           </div>
         </div>
@@ -156,15 +212,9 @@ watch(selectedLanguage, (lang) => {
                 <CodeXml class="w-5 h-5 text-pink-600" />
                 <span>Code</span>
               </div>
-              <select
-                  v-model="selectedLanguage"
-                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="python">Python</option>
-                <option value="javascript" disabled>JavaScript</option>
-                <option value="cpp" disabled>C++</option>
-                <option value="java" disabled>Java</option>
-              </select>
+              <span class="px-3 py-1 rounded-md bg-gray-200 dark:bg-neutral-700 text-sm font-medium">
+                Python
+              </span>
             </div>
             <div ref="editorContainer" class="flex-1 overflow-hidden rounded-md"></div>
           </div>
