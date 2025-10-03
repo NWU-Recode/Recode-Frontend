@@ -50,7 +50,10 @@ async function deleteModule(mod) {
   if (!confirmed) return
 
   try {
-    await apiFetch(`/admin/modules/${mod.id}`, { method: 'DELETE' })
+    await apiFetch(`/admin/${mod.id}`, {
+      method: 'DELETE',
+      body: null,
+    })
     await fetchModules()
   } catch (err) {
     console.error('Failed to delete module', err)
