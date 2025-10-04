@@ -19,7 +19,13 @@ const goToChallenge = (challenge: any) => {
   localStorage.setItem('currentChallengeId', challenge.challenge_id)
 
   // Navigate to coding challenge view
-  router.push('/coding-challenge')
+  router.push({
+    path: '/coding-challenge',
+    state: {
+      moduleCode: challenge.moduleCode,
+      challengeName: challenge.challenge_name
+    }
+  })
 }
 
 // Badge tiers and question counts per weekly challenge
