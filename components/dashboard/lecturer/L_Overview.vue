@@ -13,22 +13,26 @@ import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import rubyIcon from '~/assets/flat-icons/ruby.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
 
-
 const { apiFetch } = useApiFetch()
 
 // --- User info ---
 const lecturer = ref<{ full_name: string }>({ full_name: '' })
 
+
 // --- Modules & Challenges ---
 const modules = ref<any[]>([])
 const cards = ref<any[]>([]) // challenge progress cards
-const challengeOptions = ref<any[]>([]) // dropdown challenges
+
+const challengeOptions = ref<any[]>([])
 const selectedChallengeId = ref<string | null>(null)
+
+const questions = ref<any[]>([])
+const currentQuestionIndex = ref(0)
 
 // --- Monaco Editor ---
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor
-const selectedLanguage = ref('python')
+const selectedLanguage = 'python'
 
 // --- Fetch current lecturer ---
 async function fetchLecturer() {
@@ -50,10 +54,10 @@ async function fetchModules() {
   }
 }
 
-// --- Fetch challenge progress (cards) & dropdown options ---
+// --- Fetch challenge progress (cards) ---
 async function fetchCards() {
   try {
-    const res = await apiFetch('/challenges/progress')
+    const res = await apiFetch('/challenge/progress')
     cards.value = res.map((c: any) => {
       let icons: string[] = []
       let percentages: number[] = []
@@ -86,15 +90,44 @@ async function fetchCards() {
         participation_rate: c.challenge_participation_rate,
       }
     })
+  } catch (err) {
+    console.error('Failed to fetch challenge progress:', err)
+  }
+}
 
-    // Populate dropdown options from cards
-    challengeOptions.value = cards.value.map(c => ({
-      id: c.id,
-      title: c.topic,
+async function fetchChallenges() {
+  try {
+    const res = await apiFetch('/challenge/progress') // same as your cards endpoint
+    challengeOptions.value = res.map((c: any) => ({
+      id: c.challenge_id,
+      title: c.challenge_name,
       module_code: c.module_code,
     }))
   } catch (err) {
-    console.error('Failed to fetch challenge progress:', err)
+    console.error('Failed to fetch challenges', err)
+  }
+}
+
+async function fetchQuestionsForChallenge(challengeId: string) {
+  try {
+    const data = await apiFetch(`/challenges/${challengeId}/questions`)
+    questions.value = data.items || []
+
+    if (questions.value.length === 0) {
+      // ✅ Clear editor if no questions found
+      if (editor) editor.setValue('')
+      currentQuestionIndex.value = 0
+      return
+    }
+
+    // ✅ Load first question into editor
+    currentQuestionIndex.value = 0
+    loadCurrentQuestionIntoEditor()
+  } catch (err) {
+    console.error('Failed to load questions', err)
+    questions.value = []
+    // ✅ Also clear editor if request fails
+    if (editor) editor.setValue('')
   }
 }
 
@@ -102,17 +135,48 @@ async function fetchCards() {
 onMounted(() => {
   fetchLecturer()
   fetchModules()
+  fetchChallenges()
   fetchCards()
 
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
-      value: `def hello():\n    print("Hello, world!")\n\nhello()`,
-      language: selectedLanguage.value,
+      value: '',
+      language: selectedLanguage,
       theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light',
       automaticLayout: true,
+      readOnly: true,
     })
   }
 })
+
+watch(selectedChallengeId, (id) => {
+  // ✅ Clear old data before loading new challenge
+  questions.value = []
+  currentQuestionIndex.value = 0
+  if (editor) editor.setValue('')
+
+  if (id) fetchQuestionsForChallenge(id)
+})
+
+// --- Current Question ---
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
+
+// --- Navigation ---
+function nextQuestion() {
+  if (currentQuestionIndex.value < questions.value.length - 1) currentQuestionIndex.value++
+  loadCurrentQuestionIntoEditor()
+}
+function prevQuestion() {
+  if (currentQuestionIndex.value > 0) currentQuestionIndex.value--
+  loadCurrentQuestionIntoEditor()
+}
+
+// --- Load code into Monaco ---
+function loadCurrentQuestionIntoEditor() {
+  if (!editor || !currentQuestion.value) return
+  const code = currentQuestion.value.starter_code || ''
+  editor.setValue(code)
+}
 </script>
 
 <template>
@@ -158,6 +222,7 @@ onMounted(() => {
 
     <!-- Dropdown & Navigation -->
     <div class="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <!-- Challenge Dropdown -->
       <DropdownMenu>
         <DropdownMenuTrigger
             class="w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm flex items-center justify-between text-sm sm:text-base whitespace-normal break-words"
@@ -180,11 +245,30 @@ onMounted(() => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <!-- Question Navigation -->
       <div class="flex flex-wrap sm:flex-nowrap justify-end gap-2 items-center">
-        <Button variant="outline" :leftIcon="ChevronLeft">Previous</Button>
-        <span class="p-2">Question 1</span>
-        <Button variant="outline" :rightIcon="ChevronRight">Next</Button>
-        <Button variant="outline" :leftIcon="Send" disabled>Submit</Button>
+        <Button
+            variant="outline"
+            :leftIcon="ChevronLeft"
+            :disabled="currentQuestionIndex === 0"
+            @click="prevQuestion"
+        >
+          Previous
+        </Button>
+        <span class="p-2">
+          Question {{ currentQuestionIndex + 1 }}
+        </span>
+        <Button
+            variant="outline"
+            :rightIcon="ChevronRight"
+            :disabled="currentQuestionIndex >= questions.length - 1"
+            @click="nextQuestion"
+        >
+          Next
+        </Button>
+        <Button variant="outline" :leftIcon="Send" disabled>
+          Submit
+        </Button>
       </div>
     </div>
 
@@ -199,12 +283,29 @@ onMounted(() => {
           <BookOpenText class="w-5 h-5 text-pink-600" />
           <span>Description</span>
         </div>
+
         <div class="flex-1 overflow-auto">
-          <p>Question details will go here</p>
+          <div v-if="selectedChallengeId">
+            <template v-if="questions.length > 0 && currentQuestion">
+              <p class="whitespace-pre-wrap text-neutral-800 dark:text-neutral-100">
+                {{ currentQuestion.question_text || currentQuestion.prompt || 'No description available' }}
+              </p>
+            </template>
+
+            <template v-else>
+              <p class="text-gray-500 dark:text-gray-400">
+                No challenge data yet.
+              </p>
+            </template>
+          </div>
+
+          <div v-else class="text-gray-500 dark:text-gray-400">
+            Please select a challenge to view details.
+          </div>
         </div>
       </div>
 
-      <!-- Code editor -->
+        <!-- Code editor -->
       <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <CodeXml class="w-5 h-5 text-pink-600" />
@@ -220,7 +321,14 @@ onMounted(() => {
           <span>Testcases</span>
         </div>
         <div class="flex-1 overflow-auto">
-          <p class="text-neutral-700 dark:text-neutral-200">Testcase results will appear here</p>
+          <div v-if="selectedChallengeId && cards.length > 0">
+            <p class="text-neutral-700 dark:text-neutral-200">
+              Testcases for this challenge will be displayed here.
+            </p>
+          </div>
+          <div v-else class="text-gray-500 dark:text-gray-400">
+            Select a challenge to view its testcases.
+          </div>
         </div>
       </div>
     </div>

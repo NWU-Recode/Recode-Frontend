@@ -105,6 +105,7 @@ onMounted(async () => {
         <TableRow>
           <TableHead>Code</TableHead>
           <TableHead>Name</TableHead>
+          <TableHead>Lecturer</TableHead>
           <TableHead>Credits</TableHead>
           <TableHead class="text-center">Actions</TableHead>
         </TableRow>
@@ -114,6 +115,7 @@ onMounted(async () => {
           <TableCell>{{ mod.code }}</TableCell>
           <TableCell>{{ mod.name }}</TableCell>
           <TableCell>{{ mod.lecturer_id }}</TableCell>
+          <TableCell>{{ mod.credits}}</TableCell>
           <TableCell class="text-center">
             <div class="flex gap-2 justify-center">
               <Button size="sm" variant="secondary" @click="editModule(mod)">Edit</Button>

@@ -240,16 +240,16 @@ onMounted(async () => {
         <TableHeader>
           <TableRow>
             <TableHead />
-            <TableHead>Module Name</TableHead>
             <TableHead>Module Code</TableHead>
+            <TableHead>Module Name</TableHead>
             <TableHead>Challenges Count</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="mod in modules" :key="mod.id" collapsible>
             <template #default>
-              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ mod.code }}</TableCell>
+              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ challengesByModule[mod.code]?.length || 0 }}</TableCell>
             </template>
 

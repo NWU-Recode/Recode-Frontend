@@ -75,7 +75,9 @@ async function fetchBadges() {
 // Fetch global leaderboard
 const fetchLeaderboard = async () => {
   try {
-    leaderboard.value = await apiFetch('/global/leaderboard')
+    const data = await apiFetch('/global/leaderboard')
+    // Sort by global_rank ascending
+    leaderboard.value = data.sort((a, b) => a.global_rank - b.global_rank)
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err)
   }
@@ -103,6 +105,26 @@ onMounted(() => {
 // Compute podium + rest
 const podium = computed(() => leaderboard.value.slice(0, 3))
 const restStudents = computed(() => leaderboard.value.slice(3))
+
+const podiumHeights = ref<number[]>([0, 0, 0])
+const maxPodiumHeight = ref(0)
+
+const setPodiumHeight = () => {
+  nextTick(() => {
+    const cards = document.querySelectorAll<HTMLDivElement>('.podium-card')
+    podiumHeights.value = Array.from(cards).map(c => c.offsetHeight)
+    maxPodiumHeight.value = Math.max(...podiumHeights.value)
+  })
+}
+
+onMounted(() => {
+  setPodiumHeight()
+})
+
+watch(podium, () => {
+  setPodiumHeight()
+})
+
 </script>
 
 <template>
@@ -148,42 +170,66 @@ const restStudents = computed(() => leaderboard.value.slice(3))
     </Card>
   </div>
 
-  <!-- Podium -->
-  <div v-if="podium.length >= 3" class="mt-8 flex flex-col sm:flex-row sm:justify-center sm:items-end gap-4 sm:gap-8">
+  <!-- PODIUMS -->
+  <div v-if="podium.length >= 3" class="mt-8 flex flex-col sm:flex-row sm:justify-center sm:items-end gap-2 sm:gap-4">
 
-    <!-- 1st place (always on top for small screens, center for large screens) -->
+    <!-- 1st place -->
     <div
-        class="rounded-lg bg-yellow-100 dark:bg-yellow-900 p-4 flex flex-col shadow w-36 sm:w-40 h-48 sm:h-56 items-center justify-end relative self-center"
+        class="podium-card rounded-lg bg-yellow-100 dark:bg-yellow-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative self-center"
+        :style="{ minHeight: maxPodiumHeight + 'px' }"
     >
-      <span class="absolute top-1 sm:top-2 text-sm font-semibold">1st</span>
-      <img :src="goldIcon" class="w-16 sm:w-20 h-16 sm:h-20 mb-4 sm:mb-6" />
-      <span class="font-semibold text-center text-sm sm:text-base">{{ podium[0].full_name }}</span>
-      <span class="text-xs sm:text-sm text-neutral-500">{{ podium[0].current_elo }} pts</span>
+      <!-- Top fixed section -->
+      <div class="flex flex-col items-center">
+        <span class="text-sm font-semibold mb-2">1st</span>
+        <img :src="goldIcon" class="w-16 sm:w-20 h-16 sm:h-20" />
+      </div>
+
+      <!-- Bottom growing section -->
+      <div class="flex flex-col items-center mt-2">
+        <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[0].title_name }}</span>
+        <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[0].full_name }}</span>
+        <span class="text-xs sm:text-sm text-neutral-500">{{ podium[0].current_elo }} pts</span>
+      </div>
     </div>
 
-    <!-- 2nd and 3rd place wrapper -->
+    <!-- 2nd and 3rd place -->
     <div class="flex justify-center gap-4 w-full sm:w-auto mt-4 sm:mt-0">
-      <!-- 2nd place -->
+
+      <!-- 2nd -->
       <div
-          class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-32 sm:w-40 h-44 sm:h-48 items-center justify-end relative"
+          class="podium-card rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative"
+          :style="{ minHeight: maxPodiumHeight + 'px' }"
       >
-        <span class="absolute top-1 sm:top-2 text-sm font-semibold">2nd</span>
-        <img :src="silverIcon" class="w-12 sm:w-16 h-12 sm:h-16 mb-1 sm:mb-2" />
-        <span class="font-semibold text-center text-sm sm:text-base">{{ podium[1].full_name }}</span>
-        <span class="text-xs sm:text-sm text-neutral-500">{{ podium[1].current_elo }} pts</span>
+        <div class="flex flex-col items-center">
+          <span class="text-sm font-semibold mb-1">2nd</span>
+          <img :src="silverIcon" class="w-12 sm:w-16 h-12 sm:h-16" />
+        </div>
+        <div class="flex flex-col items-center mt-2">
+          <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[1].title_name }}</span>
+          <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[1].full_name }}</span>
+          <span class="text-xs sm:text-sm text-neutral-500">{{ podium[1].current_elo }} pts</span>
+        </div>
       </div>
 
-      <!-- 3rd place -->
+      <!-- 3rd -->
       <div
-          class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-32 sm:w-40 h-44 sm:h-48 items-center justify-end relative"
+          class="podium-card rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative"
+          :style="{ minHeight: maxPodiumHeight + 'px' }"
       >
-        <span class="absolute top-1 sm:top-2 text-sm font-semibold">3rd</span>
-        <img :src="bronzeIcon" class="w-12 sm:w-16 h-12 sm:h-16 mb-1 sm:mb-2" />
-        <span class="font-semibold text-center text-sm sm:text-base">{{ podium[2].full_name }}</span>
-        <span class="text-xs sm:text-sm text-neutral-500">{{ podium[2].current_elo }} pts</span>
+        <div class="flex flex-col items-center">
+          <span class="text-sm font-semibold mb-1">3rd</span>
+          <img :src="bronzeIcon" class="w-12 sm:w-16 h-12 sm:h-16" />
+        </div>
+        <div class="flex flex-col items-center mt-2">
+          <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[2].title_name }}</span>
+          <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[2].full_name }}</span>
+          <span class="text-xs sm:text-sm text-neutral-500">{{ podium[2].current_elo }} pts</span>
+        </div>
       </div>
+
     </div>
   </div>
+
 
   <!-- Leaderboard Table -->
   <div class="mt-8 overflow-x-auto">
@@ -192,6 +238,7 @@ const restStudents = computed(() => leaderboard.value.slice(3))
         <TableHeader>
           <TableRow>
             <TableHead>Rank</TableHead>
+            <TableHead>Title</TableHead>
             <TableHead>Student name</TableHead>
             <TableHead>Total Badges</TableHead>
             <TableHead>ELO</TableHead>
@@ -201,6 +248,7 @@ const restStudents = computed(() => leaderboard.value.slice(3))
         <TableBody>
           <TableRow v-for="student in restStudents" :key="student.student_id">
             <TableCell>{{ student.global_rank }}</TableCell>
+            <TableCell>{{ student.title_name }}</TableCell>
             <TableCell>{{ student.full_name }}</TableCell>
             <TableCell>{{ student.total_badges }}</TableCell>
             <TableCell>{{ student.current_elo }}</TableCell>

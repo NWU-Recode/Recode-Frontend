@@ -1,49 +1,102 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import * as monaco from 'monaco-editor'
-import { useRouter } from 'vue-router'
 import { useApiFetch } from '@/composables/useApiFetch'
 import { ChevronLeft, ChevronRight, Timer, BugPlay, Send, BookOpenText, NotebookPen, CodeXml, CircleCheck } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
 
 const { apiFetch } = useApiFetch()
 
-// State
+// --- State ---
+const challengeInfo = ref<{ moduleCode?: string; challengeName?: string }>({})
 const questions = ref<any[]>([])
 const currentQuestionIndex = ref(0)
 const loading = ref(true)
 
-// Per-question notes
+// --- Notes per question ---
 const questionNotes = ref<string[]>([])
 watch(currentQuestionIndex, (idx) => {
-  // Ensure notes array has entry for current question
   if (questionNotes.value[idx] === undefined) questionNotes.value[idx] = ''
 })
 
+// --- Code per question ---
+const questionCode = ref<string[]>([])
 
-const showDescription = ref(true)
-const showNotes = ref(false)
+// --- Timer per question ---
+const elapsedSecondsPerQuestion = ref<number[]>([])
+const timerRunning = ref(false)
+let timerInterval: ReturnType<typeof setInterval> | null = null
 
-const section2Height = ref(60)
-const section3Height = ref(40)
+watch(currentQuestionIndex, (newIdx, oldIdx) => {
+  if (!editor) return
 
+  // Save previous question's code
+  if (oldIdx !== undefined) saveCurrentCode()
+  saveCurrentTime()
+  stopTimer()
+
+  // Initialize elapsedSeconds if needed
+  if (!elapsedSecondsPerQuestion.value[newIdx]) elapsedSecondsPerQuestion.value[newIdx] = 0
+  elapsedSeconds.value = elapsedSecondsPerQuestion.value[newIdx]
+
+  // Load the new question code
+  const codeToLoad = questionCode.value[newIdx] || currentQuestion.value?.starter_code || ''
+  editor.setValue(normalizeSourceCode(codeToLoad))
+})
+
+// --- Timer reactive for current question ---
+const elapsedSeconds = ref(0)
+
+// --- Helper to normalize source code ---
+function normalizeSourceCode(code: string) {
+  return code.trim().replace(/\r\n|\r/g, "\n").replace(/\n{2,}/g, "\n")
+}
+
+// --- Language map ---
 const selectedLanguage = 'python'
+
+// --- Monaco ---
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 
-// --- Fetch questions from backend ---
+onMounted(() => {
+  if (editorContainer.value) {
+    editor = monaco.editor.create(editorContainer.value, {
+      value: '',
+      language: selectedLanguage,
+      theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light',
+      automaticLayout: true,
+    })
+  }
+
+  if (window.history.state) {
+    const state = window.history.state
+    challengeInfo.value.moduleCode = state.moduleCode
+    challengeInfo.value.challengeName = state.challengeName
+  }
+
+  fetchQuestions()
+})
+
+// --- Fetch questions ---
 async function fetchQuestions() {
   try {
     const challengeId = localStorage.getItem('currentChallengeId')
     if (!challengeId) return
 
-    // Use composable if you have one, or full API URL
     const data = await apiFetch(`/challenges/${challengeId}/questions`)
     questions.value = data.items || []
 
-    if (questions.value.length > 0 && editor) {
-      editor.setValue(questions.value[0].starter_code || '')
-    }
+    questions.value.forEach((q, idx) => {
+      questionCode.value[idx] = q.starter_code ?? ''
+      elapsedSecondsPerQuestion.value[idx] = 0
+      if (questionNotes.value[idx] === undefined) questionNotes.value[idx] = ''
+    })
 
+    if (questions.value.length > 0) {
+      currentQuestionIndex.value = 0
+      loadCurrentQuestionIntoEditor()
+    }
   } catch (err) {
     console.error('Failed to load questions', err)
   } finally {
@@ -67,30 +120,136 @@ function prevQuestion() {
     loadCurrentQuestionIntoEditor()
   }
 }
-function loadCurrentQuestionIntoEditor() {
-  if (!editor || !currentQuestion.value) return
-  editor.setValue(currentQuestion.value.starter_code || '')
+
+// --- Save/Load helpers ---
+function saveCurrentCode() {
+  if (!editor) return
+  questionCode.value[currentQuestionIndex.value] = editor.getValue()
 }
 
-// --- Monaco Init ---
-onMounted(() => {
-  if (editorContainer.value) {
-    editor = monaco.editor.create(editorContainer.value, {
-      value: '',
-      language: 'python',
-      theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light',
-      automaticLayout: true,
-    })
+function loadCurrentQuestionIntoEditor() {
+  if (!editor || !currentQuestion.value) return
+  const starterCode = currentQuestion.value.starter_code ?? ''
+  questionCode.value[currentQuestionIndex.value] = starterCode
+  editor.setValue(normalizeSourceCode(starterCode))
+  nextTick(() => editor?.layout())
+}
+
+// --- Timer helpers ---
+function saveCurrentTime() {
+  elapsedSecondsPerQuestion.value[currentQuestionIndex.value] = elapsedSeconds.value
+}
+
+function toggleTimer() {
+  if (timerRunning.value) stopTimer()
+  else startTimer()
+}
+
+function startTimer() {
+  timerRunning.value = true
+  timerInterval = setInterval(() => { elapsedSeconds.value++ }, 1000)
+}
+
+function stopTimer() {
+  timerRunning.value = false
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
   }
-  fetchQuestions()
+}
+
+const formattedTime = computed(() => {
+  const h = Math.floor(elapsedSeconds.value / 3600)
+  const m = Math.floor((elapsedSeconds.value % 3600) / 60)
+  const s = elapsedSeconds.value % 60
+  return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
 })
 
+// --- Submit ---
+async function handleSubmit() {
+  if (!editor) return
+  saveCurrentCode()
+  saveCurrentTime()
+  const challengeId = currentQuestion.value?.challenge_id || localStorage.getItem('currentChallengeId')
+  if (!challengeId) return
+
+  if (currentQuestionIndex.value < questions.value.length - 1) {
+    nextQuestion()
+    return
+  }
+
+  const submissions: Record<string, string> = {}
+  questions.value.forEach((q, idx) => { submissions[q.id] = normalizeSourceCode(questionCode.value[idx] || '') })
+
+  try { await apiFetch(`/submissions/challenges/${challengeId}/submit-challenge`, { method: 'POST', body: { submissions } }) }
+  catch (err) { console.error('Submission failed', err) }
+}
+
+const submitButtonLabel = computed(() => currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save')
+
+// --- UI state ---
+const showDescription = ref(true)
+const showNotes = ref(false)
+const section2Height = ref(60)
+const section3Height = ref(40)
+
+// --- Divider Drag Logic ---
+let startY = 0
+let startSection2Height = 0
+let startSection3Height = 0
+let isDragging = false
+
+function onMouseDown(e: MouseEvent) {
+  isDragging = true
+  startY = e.clientY
+  startSection2Height = section2Height.value
+  startSection3Height = section3Height.value
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function onMouseMove(e: MouseEvent) {
+  if (!isDragging) return
+  const container = document.querySelector('.w-2\\/3.flex.flex-col') as HTMLElement
+  if (!container) return
+  const containerHeight = container.clientHeight
+  const deltaY = e.clientY - startY
+  const deltaPercent = (deltaY / containerHeight) * 100
+
+  let newSection2Height = startSection2Height + deltaPercent
+  let newSection3Height = startSection3Height - deltaPercent
+
+  newSection2Height = Math.max(10, Math.min(90, newSection2Height))
+  newSection3Height = Math.max(10, Math.min(90, newSection3Height))
+
+  section2Height.value = newSection2Height
+  section3Height.value = newSection3Height
+
+  nextTick(() => editor?.layout())
+}
+
+function onMouseUp() {
+  isDragging = false
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+}
 </script>
 
 
 <template>
   <div class="flex w-full h-screen">
     <div class="flex-1 flex flex-col">
+      <!-- Challenge Info -->
+      <div class="mb-4 p-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 shadow flex flex-col sm:flex-row justify-between items-center">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <span class="font-semibold text-purple-400">Module:</span>
+          <span>{{ challengeInfo.moduleCode || '—' }}</span>
+
+          <span class="font-semibold text-purple-400 ml-4">Challenge:</span>
+          <span>{{ challengeInfo.challengeName || '—' }}</span>
+        </div>
+      </div>
+
 
       <!-- Top Buttons -->
       <div class="flex items-center justify-between p-4">
@@ -102,13 +261,18 @@ onMounted(() => {
           <Button variant="outline" :rightIcon="ChevronRight" :disabled="currentQuestionIndex === questions.length - 1" @click="nextQuestion">
             Next
           </Button>
-
         </div>
 
         <div class="flex items-center gap-2">
-          <Button variant="ghost" :leftIcon="Timer" ></Button>
-          <Button variant="ghost" :leftIcon="BugPlay" ></Button>
-          <Button variant="outline" :leftIcon="Send" >Submit</Button>
+          <Button variant="ghost" :leftIcon="Timer" @click="toggleTimer">
+            {{ formattedTime }}
+          </Button>
+          <Button variant="ghost" :leftIcon="BugPlay"></Button>
+          <Button @click="loadCurrentQuestionIntoEditor">Reset to Starter Code</Button>
+          <Button variant="outline" :leftIcon="Send" @click="handleSubmit">
+            {{ submitButtonLabel }}
+          </Button>
+
         </div>
 
         <div>
@@ -120,7 +284,7 @@ onMounted(() => {
       <div class="flex flex-1 gap-4 p-4">
 
         <!-- Section 1: Description / Notes -->
-        <div class="w-1/3 h-full rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col">
+        <div class="w-1/3 max-h-screen overflow-auto rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col">
           <div class="flex items-center gap-4 mb-4">
             <button
                 @click="showDescription = true; showNotes = false"
@@ -150,7 +314,7 @@ onMounted(() => {
               <div v-if="showDescription">
                 <!-- Question Header -->
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-bold text-purple-600">
+                  <h3 class="text-lg font-bold text-purple-400">
                     Question {{ currentQuestionIndex + 1 }}:
                   </h3>
                   <span class="text-sm font-medium text-gray-500">
@@ -185,7 +349,6 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Notes Tab -->
               <div v-else-if="showNotes" class="flex flex-col h-full">
                 <textarea
                     v-model="questionNotes[currentQuestionIndex]"
@@ -195,7 +358,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- No question loaded -->
             <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
               No question loaded
             </div>
@@ -235,7 +397,6 @@ onMounted(() => {
               <!-- Testcase/output -->
             </div>
           </div>
-
         </div>
       </div>
     </div>
