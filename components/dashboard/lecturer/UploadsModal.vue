@@ -5,7 +5,6 @@ import { useAuth } from "@/composables/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Toggle } from "@/components/ui/toggle";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -237,18 +236,6 @@ async function uploadAll() {
             <Label>Topic(s)</Label>
             <Input v-model="f.topic" placeholder="Enter topic(s)" />
           </div>
-        </div>
-
-        <!-- Schedule toggle + date input inline -->
-        <div class="flex items-center gap-2 mt-2">
-          <Toggle v-model:pressed="f.schedule" />
-          <Label>Schedule upload</Label>
-          <Input
-              v-if="f.schedule"
-              type="datetime-local"
-              v-model="f.scheduledAt"
-              class="ml-2 flex-1"
-          />
         </div>
       </div>
     </div>

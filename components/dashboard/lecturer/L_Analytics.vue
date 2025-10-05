@@ -12,15 +12,33 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '~
 import { useApiFetch } from '@/composables/useApiFetch'
 
 const { apiFetch } = useApiFetch()
+const { user, isAuthenticated, fetchUser } = useAuth()
+const token = ref<string | null>(null)
 
-// --- Dropdown & challenge data ---
+async function initAuth() {
+  if (!isAuthenticated.value) {
+    const u = await fetchUser()
+    if (!u) return
+  }
+  token.value = localStorage.getItem('access_token')
+}
+await initAuth()
+
+// --- Modules ---
+const modules = ref<any[]>([])
+const selectedModuleCode = ref<string | null>(null)
+
+// --- Students per module ---
+const studentsByModule = reactive<Record<string, any[]>>({})
+
+// --- Challenge selection (optional) ---
 const challenges = ref<any[]>([])
 const selectedChallengeId = ref<string | null>(null)
 const selectedChallenge = computed(() =>
     challenges.value.find(c => c.challenge_id === selectedChallengeId)
 )
 
-// --- Cards data derived from selected challenge ---
+// --- Top cards derived from selected challenge ---
 const submissionsPercentage = computed(() =>
     selectedChallenge?.value?.challenge_participation_rate ?? 0
 )
@@ -37,61 +55,89 @@ const badgeImages: Record<string, string> = {
   Diamond,
 }
 
-// --- Static table for now ---
-const topics = ['If Statements', 'Else Statements', 'While Loops', 'Do-While Loops']
-const submissionsList = [
-  { name: "John Doe", number: "31765387", topic: "If Statements", badge: "Bronze", time: "10 min" },
-  { name: "Jane Doe", number: "45609312", topic: "If Statements", badge: "Gold", time: "2.3 hours" },
-]
-const students = submissionsList.map(s => ({
-  ...s,
-  history: topics.filter(t => t !== s.topic).map((topic, i) => ({
-    topic,
-    badge: ["Bronze", "Silver", "Gold", "Ruby"][i % 4],
-    time: ["15 min", "1.2 hours", "30 min", "3.5 hours"][i % 4],
-  }))
-}))
+// --- Fetch modules ---
+async function fetchModules() {
+  if (!token.value) await initAuth()
+  if (!token.value) return
 
-// --- Fetch challenge progress ---
-async function fetchChallenges() {
   try {
-    const res = await apiFetch('/challenges/progress')
-    challenges.value = res
+    const res = await apiFetch('/admin/', {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    modules.value = res
   } catch (err) {
-    console.error('Failed to fetch challenges:', err)
+    console.error('Failed to fetch modules', err)
   }
 }
 
-onMounted(() => {
-  fetchChallenges()
+// --- Fetch student progress for a module ---
+async function fetchChallengeProgress(moduleCode: string) {
+  if (!token.value) await initAuth()
+  if (!token.value) return
+
+  try {
+    const res = await apiFetch(`/challenge-progress?module_code=${moduleCode}`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+
+    const studentMap: Record<string, any> = {}
+    res.forEach((entry: any) => {
+      const badge = entry.highest_badge || 'none'
+
+      if (!studentMap[entry.student_number]) {
+        studentMap[entry.student_number] = {
+          name: entry.student_name,
+          number: entry.student_number,
+          history: [],
+        }
+      }
+
+      studentMap[entry.student_number].history.push({
+        topic: entry.challenge_name,
+        badge,
+        time: entry.total_time,
+      })
+    })
+
+    studentsByModule[moduleCode] = Object.values(studentMap)
+  } catch (err) {
+    console.error('Failed to fetch challenge progress:', err)
+  }
+}
+
+// --- Watch selected module to refresh students ---
+watch(selectedModuleCode, async (val) => {
+  if (!val) return
+  await fetchChallengeProgress(val)
+})
+
+onMounted(async () => {
+  await fetchModules()
 })
 </script>
 
 <template>
   <div class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
-    <!-- Dropdown -->
+
+    <!-- Module Dropdown -->
     <div class="w-full max-w-sm">
       <DropdownMenu>
         <DropdownMenuTrigger
-            class="w-full px-4 py-2 border rounded-md shadow-sm flex items-center justify-between text-sm sm:text-base"
+            class="w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm flex items-center justify-between text-sm sm:text-base whitespace-normal break-words"
         >
-          {{ selectedChallenge ? selectedChallenge.challenge_name : 'Select a challenge' }}
+          {{ selectedModuleCode ? modules.find(m => m.code === selectedModuleCode)?.name : 'Select a module' }}
         </DropdownMenuTrigger>
 
-        <!-- Wrap dropdown content so long items wrap instead of stretching the page -->
-        <DropdownMenuContent
-            class="w-full max-w-xs break-words"
-            style="white-space: normal;"
-        >
+        <DropdownMenuContent class="max-w-xs w-full break-words">
           <DropdownMenuItem
-              v-for="c in challenges"
-              :key="c.challenge_id"
-              @click="selectedChallengeId = c.challenge_id"
+              v-for="mod in modules"
+              :key="mod.code"
+              @click="selectedModuleCode = mod.code"
               class="whitespace-normal"
           >
             <div class="flex flex-col">
-              <span class="font-semibold text-sm sm:text-base break-words">{{ c.challenge_name }}</span>
-              <span class="text-xs sm:text-sm text-gray-500 break-words">{{ c.module_code }}</span>
+              <span class="font-semibold">{{ mod.name }}</span>
+              <span class="text-xs text-gray-500">{{ mod.code }}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -123,67 +169,69 @@ onMounted(() => {
     </div>
 
     <!-- Graph placeholder -->
-    <div
-        class="h-64 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow"
-    >
+    <div class="h-64 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
       <span class="text-sm sm:text-base text-gray-500 dark:text-gray-400">
         Graph / analytics will go here
       </span>
     </div>
 
-    <!-- Table container: scroll only inside -->
+    <!-- Students Table -->
     <div class="w-full max-w-[370px] sm:max-w-full overflow-x-auto rounded-lg shadow">
-      <!-- Inner wrapper ensures table does not push the page -->
       <div class="inline-block min-w-full">
         <Table class="table-auto w-full">
           <TableHeader>
             <TableRow>
               <TableHead />
-              <TableHead>Student Name</TableHead>
               <TableHead>Student Number</TableHead>
-              <TableHead>Topic</TableHead>
-              <TableHead>Badge</TableHead>
-              <TableHead>Time Spent</TableHead>
+              <TableHead>Student Name</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            <TableRow v-for="student in students" :key="student.number" collapsible>
+            <TableRow
+                v-for="student in studentsByModule[selectedModuleCode] || []"
+                :key="student.number"
+                collapsible
+            >
+              <!-- Main row: only name & number -->
               <template #default>
-                <TableCell>{{ student.name }}</TableCell>
                 <TableCell>{{ student.number }}</TableCell>
-                <TableCell>{{ student.topic }}</TableCell>
-                <TableCell>
-                  <img
-                      :src="badgeImages[student.badge]"
-                      class="w-6 h-6 sm:w-8 sm:h-8"
-                      :alt="student.badge"
-                  />
-                </TableCell>
-                <TableCell>{{ student.time }}</TableCell>
+                <TableCell>{{ student.name }}</TableCell>
+                <TableCell />
               </template>
+
+              <!-- Expanded row: per-challenge stats -->
               <template #expanded>
-                <TableRow v-for="(h, i) in student.history" :key="i" class="bg-muted/20">
+                <TableRow
+                    v-for="(h, i) in student.history.length ? student.history : [{...student}]"
+                    :key="i"
+                    class="bg-muted/20"
+                >
                   <template #default>
                     <TableCell />
-                    <TableCell />
-                    <TableCell />
                     <TableCell>{{ h.topic }}</TableCell>
-                    <TableCell>
-                      <img
-                          :src="badgeImages[h.badge]"
-                          class="w-6 h-6 sm:w-8 sm:h-8"
-                          :alt="h.badge"
-                      />
-                    </TableCell>
                     <TableCell>{{ h.time }}</TableCell>
+                    <TableCell>
+                      <template v-if="h.badge && badgeImages[h.badge]">
+                        <img
+                            :src="badgeImages[h.badge]"
+                            class="w-6 h-6 sm:w-8 sm:h-8"
+                            :alt="h.badge"
+                        />
+                      </template>
+                      <template v-else>
+                        <span class="text-gray-400 italic">None</span>
+                      </template>
+                    </TableCell>
                   </template>
                 </TableRow>
               </template>
             </TableRow>
           </TableBody>
+
         </Table>
       </div>
     </div>
-
   </div>
 </template>

@@ -11,7 +11,6 @@ export function getNavMenu(user: any): NavMenu[] {
           heading: '',
           items: [
             { title: 'Dashboard', icon: 'i-lucide-home', link: '/' },
-            { title: 'Coding challenge', icon: 'i-lucide-code', link: '/coding-challenge' },
           ],
         },
       ]

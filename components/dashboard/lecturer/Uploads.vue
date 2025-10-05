@@ -6,6 +6,9 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/composables/useAuth";
 import { useApiFetch } from "@/composables/useApiFetch";
+import Ruby from '~/assets/flat-icons/ruby.png'
+import Emerald from '~/assets/flat-icons/emerald.png'
+import Diamond from '~/assets/flat-icons/diamond.png'
 
 const open = ref(false);
 const modules = ref<any[]>([]); // list of modules
@@ -57,6 +60,27 @@ async function fetchSlides() {
   }
 }
 
+async function downloadSlide(slideId: number) {
+  if (!token.value) await initAuth();
+  if (!token.value) return;
+
+  try {
+    const res = await apiFetch(`/slides/${slideId}/download`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+      params: { ttl: 300 }, // optional, default is 300
+    });
+
+    if (res.signed_url) {
+      window.open(res.signed_url, "_blank"); // open in new tab
+    } else {
+      console.error("No signed URL returned for slide", slideId);
+    }
+  } catch (err) {
+    console.error("Failed to download slide:", err);
+  }
+}
+
+
 // Fetch challenges per module
 async function fetchChallenges() {
   if (!token.value) await initAuth();
@@ -67,25 +91,26 @@ async function fetchChallenges() {
       const res = await apiFetch(`/admin/${mod.code}/challenges`, {
         headers: { Authorization: `Bearer ${token.value}` },
       });
-      challengesByModule[mod.code] = res;
+
+      // normalize for table
+      challengesByModule[mod.code] = res.map((c: any) => ({
+        ...c,
+        displayWeek:
+            c.challenge_type === 'weekly' ? c.week_number : c.week_number || null,
+        tierIcon:
+            c.challenge_type === 'special'
+                ? c.tier === 'ruby'
+                    ? Ruby
+                    : c.tier === 'emerald'
+                        ? Emerald
+                        : c.tier === 'diamond'
+                            ? Diamond
+                            : null
+                : null,
+      }));
     }
   } catch (err) {
     console.error("Failed to fetch challenges:", err);
-  }
-}
-
-// Publish a challenge
-async function publishChallenge(moduleCode: string, challengeId: string) {
-  if (!token.value) await initAuth();
-  try {
-    await apiFetch(`/admin/${moduleCode}/challenges/${challengeId}/publish`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token.value}` },
-    });
-    const challenge = challengesByModule[moduleCode].find(c => c.id === challengeId);
-    if (challenge) challenge.is_active = true;
-  } catch (err) {
-    console.error("Failed to publish challenge:", err);
   }
 }
 
@@ -102,34 +127,33 @@ onMounted(async () => {
   await fetchChallenges();
 });
 
-import { computed } from "vue";
-
 // reactive for current week
 const currentWeek = ref<number | null>(null);
 
-// derive current week from semester start date
-function calculateCurrentWeek() {
-  if (!modules.value.length) return;
+async function fetchCurrentWeek() {
+  if (!token.value) await initAuth();
+  if (!token.value) return;
 
-  // pick first module's semester start date
-  const firstModule = modules.value[0];
-  const startDateStr = firstModule.semester_start_date; // e.g., "2025-09-01"
-  if (!startDateStr) return;
+  try {
+    const res = await apiFetch("/dashboard/current-week", {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
 
-  const startDate = new Date(startDateStr);
-  const now = new Date();
-
-  // difference in days
-  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const week = Math.floor(diffDays / 7) + 1;
-
-  currentWeek.value = week >= 1 && week <= 12 ? week : null;
+    if (res && typeof res.current_week === "number") {
+      currentWeek.value = res.current_week;
+    } else {
+      currentWeek.value = null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch current week:", err);
+    currentWeek.value = null;
+  }
 }
 
 // call after modules are fetched
 onMounted(async () => {
   await fetchModules();
-  calculateCurrentWeek();
+  await fetchCurrentWeek();
   await fetchSlides();
   await fetchChallenges();
 });
@@ -157,17 +181,19 @@ onMounted(async () => {
         <TableHeader>
           <TableRow>
             <TableHead />
-            <TableHead>Module Name</TableHead>
             <TableHead>Module Code</TableHead>
+            <TableHead>Module Name</TableHead>
             <TableHead>Slides Count</TableHead>
+            <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="mod in modules" :key="mod.id" collapsible>
             <template #default>
-              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ mod.code }}</TableCell>
+              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ slidesByModule[mod.code]?.length || 0 }}</TableCell>
+              <TableCell />
             </template>
 
             <template #expanded>
@@ -178,11 +204,16 @@ onMounted(async () => {
               >
                 <template #default>
                   <TableCell />
-                  <TableCell colspan="2">{{ slide.fileName }}</TableCell>
-                  <TableCell>{{ slide.uploadDate }}</TableCell>
-                  <TableCell>{{ slide.topic }}</TableCell>
+                  <TableCell colspan="1">{{ slide.filename }}</TableCell>
+                  <TableCell>{{slide.detected_topic}}</TableCell>
+                  <TableCell>Week: {{ slide.week_number }}</TableCell>
                   <TableCell>
-                    <a :href="slide.fileUrl" class="text-blue-600 hover:underline">Download</a>
+                    <Button
+                        variant="link"
+                        @click="downloadSlide(slide.id)"
+                    >
+                      Download
+                    </Button>
                   </TableCell>
                 </template>
               </TableRow>
@@ -209,16 +240,16 @@ onMounted(async () => {
         <TableHeader>
           <TableRow>
             <TableHead />
-            <TableHead>Module Name</TableHead>
             <TableHead>Module Code</TableHead>
+            <TableHead>Module Name</TableHead>
             <TableHead>Challenges Count</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="mod in modules" :key="mod.id" collapsible>
             <template #default>
-              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ mod.code }}</TableCell>
+              <TableCell>{{ mod.name }}</TableCell>
               <TableCell>{{ challengesByModule[mod.code]?.length || 0 }}</TableCell>
             </template>
 
@@ -230,11 +261,30 @@ onMounted(async () => {
               >
                 <template #default>
                   <TableCell />
-                  <TableCell colspan="2">{{ challenge.title }}</TableCell>
-                  <TableCell /> <!-- week id / badge -->
+                  <TableCell colspan="1">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                      <span class="font-medium">{{ challenge.title }}</span>
+                    </div>
+                  </TableCell>
+
+                  <!-- Week / Tier -->
+                  <TableCell>
+                    <template v-if="challenge.challenge_type === 'weekly'">
+                      Week {{ challenge.displayWeek }}
+                    </template>
+
+                    <template v-else-if="challenge.challenge_type === 'special' && challenge.tierIcon">
+                      <span v-if="challenge.displayWeek">Week {{ challenge.displayWeek }}:</span>
+                      <img :src="challenge.tierIcon" class="w-6 h-6 inline-block ml-1" />
+                    </template>
+                  </TableCell>
+
+                  <!-- Status -->
+                  <TableCell>{{ challenge.status }}</TableCell>
                 </template>
               </TableRow>
             </template>
+
           </TableRow>
         </TableBody>
       </Table>

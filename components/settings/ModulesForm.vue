@@ -203,7 +203,25 @@ onMounted(fetchModules)
   </div>
 
   <div v-else-if="props.profile.role === 'student'">
-    <p>hello student</p>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Module Name</TableHead>
+          <TableHead>Module Code</TableHead>
+          <TableHead>Credits</TableHead>
+          <TableHead>Language</TableHead>
+        </TableRow>
+      </TableHeader>
+
+      <TableBody>
+        <TableRow v-for="mod in modules" :key="mod.id">
+          <TableCell>{{ mod.name }}</TableCell>
+          <TableCell>{{ mod.code }}</TableCell>
+          <TableCell>{{ mod.credits }}</TableCell>
+          <TableCell>{{ mod.code_language }}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   </div>
 
   <!-- Add Student Modal -->
