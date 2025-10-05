@@ -4,6 +4,7 @@ import * as monaco from 'monaco-editor'
 import { useApiFetch } from '@/composables/useApiFetch'
 import { ChevronLeft, ChevronRight, Timer, BugPlay, Send, BookOpenText, NotebookPen, CodeXml, CircleCheck } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 
 const { apiFetch } = useApiFetch()
 
@@ -30,21 +31,26 @@ let timerInterval: ReturnType<typeof setInterval> | null = null
 watch(currentQuestionIndex, (newIdx, oldIdx) => {
   if (!editor) return
 
-  // Save previous question's code
+  executionOutput.value = ''
+  executionError.value = ''
+
+  // Save previous question's code and accumulated time
   if (oldIdx !== undefined) saveCurrentCode()
   saveCurrentTime()
   stopTimer()
 
-  // Initialize elapsedSeconds if needed
+  // Start fresh timer for this session
+  elapsedSeconds.value = 0
+
+  // Initialize accumulated time if needed
   if (!elapsedSecondsPerQuestion.value[newIdx]) elapsedSecondsPerQuestion.value[newIdx] = 0
-  elapsedSeconds.value = elapsedSecondsPerQuestion.value[newIdx]
 
   // Load the new question code
   const codeToLoad = questionCode.value[newIdx] || currentQuestion.value?.starter_code || ''
   editor.setValue(normalizeSourceCode(codeToLoad))
 })
 
-// --- Timer reactive for current question ---
+// --- Timer reactive ---
 const elapsedSeconds = ref(0)
 
 // --- Helper to normalize source code ---
@@ -52,20 +58,46 @@ function normalizeSourceCode(code: string) {
   return code.trim().replace(/\r\n|\r/g, "\n").replace(/\n{2,}/g, "\n")
 }
 
-// --- Language map ---
-const selectedLanguage = 'python'
-
 // --- Monaco ---
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 
+// --- Notifications ---
+interface Notification {
+  id: number
+  title: string
+  description: string
+  variant?: 'default' | 'destructive'
+}
+const notifications = ref<Notification[]>([])
+let notifIdCounter = 0
+
+function showNotification(title: string, description: string, variant: 'default' | 'destructive' = 'destructive') {
+  const id = notifIdCounter++
+  notifications.value.push({ id, title, description, variant })
+  setTimeout(() => {
+    notifications.value = notifications.value.filter(n => n.id !== id)
+  }, 5000)
+}
+
+// --- On Mounted ---
 onMounted(() => {
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
       value: '',
-      language: selectedLanguage,
+      language: 'python',
       theme: document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs-light',
       automaticLayout: true,
+      readOnly: true,
+    })
+
+    // Capture typing in read-only editor
+    editor.onDidAttemptReadOnlyEdit(() => {
+      showNotification(
+          'Cannot edit yet',
+          'Please start the timer before making changes in the code editor.',
+          'destructive'
+      )
     })
   }
 
@@ -109,13 +141,28 @@ const currentQuestion = computed(() => questions.value[currentQuestionIndex.valu
 
 // --- Navigation ---
 function nextQuestion() {
+  if (timerRunning.value) {
+    showNotification('Timer Running', 'Please stop the timer before moving to the next question.')
+    return
+  }
+
   if (currentQuestionIndex.value < questions.value.length - 1) {
+    executionOutput.value = ''
+    executionError.value = ''
     currentQuestionIndex.value++
     loadCurrentQuestionIntoEditor()
   }
 }
+
 function prevQuestion() {
+  if (timerRunning.value) {
+    showNotification('Timer Running', 'Please stop the timer before moving to the previous question.')
+    return
+  }
+
   if (currentQuestionIndex.value > 0) {
+    executionOutput.value = ''
+    executionError.value = ''
     currentQuestionIndex.value--
     loadCurrentQuestionIntoEditor()
   }
@@ -137,7 +184,9 @@ function loadCurrentQuestionIntoEditor() {
 
 // --- Timer helpers ---
 function saveCurrentTime() {
-  elapsedSecondsPerQuestion.value[currentQuestionIndex.value] = elapsedSeconds.value
+  // Accumulate time: previous + this session
+  elapsedSecondsPerQuestion.value[currentQuestionIndex.value] += elapsedSeconds.value
+  elapsedSeconds.value = 0
 }
 
 function toggleTimer() {
@@ -147,11 +196,13 @@ function toggleTimer() {
 
 function startTimer() {
   timerRunning.value = true
+  if (editor) editor.updateOptions({ readOnly: false })
   timerInterval = setInterval(() => { elapsedSeconds.value++ }, 1000)
 }
 
 function stopTimer() {
   timerRunning.value = false
+  if (editor) editor.updateOptions({ readOnly: true })
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
@@ -165,24 +216,87 @@ const formattedTime = computed(() => {
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
 })
 
-// --- Submit ---
-async function handleSubmit() {
-  if (!editor) return
-  saveCurrentCode()
-  saveCurrentTime()
-  const challengeId = currentQuestion.value?.challenge_id || localStorage.getItem('currentChallengeId')
-  if (!challengeId) return
+const runningCode = ref(false)
+const executionOutput = ref('')
+const executionError = ref('')
 
-  if (currentQuestionIndex.value < questions.value.length - 1) {
-    nextQuestion()
+async function runCurrentCode() {
+  if (!timerRunning.value) {
+    showNotification('Start Timer', 'Please start the timer before running code.')
     return
   }
 
-  const submissions: Record<string, string> = {}
-  questions.value.forEach((q, idx) => { submissions[q.id] = normalizeSourceCode(questionCode.value[idx] || '') })
+  if (!editor || !currentQuestion.value) return
 
-  try { await apiFetch(`/submissions/challenges/${challengeId}/submit-challenge`, { method: 'POST', body: { submissions } }) }
-  catch (err) { console.error('Submission failed', err) }
+  const code = editor.getValue()
+  const languageId = 71
+  const questionId = currentQuestion.value.id
+
+  runningCode.value = true
+  executionOutput.value = ''
+  executionError.value = ''
+
+  try {
+    const response = await apiFetch('/judge0/execute/stdout', {
+      method: 'POST',
+      body: { source_code: code, language_id: languageId, stdin: '' },
+    })
+
+    executionOutput.value = response
+        ? typeof response === 'string'
+            ? response
+            : JSON.stringify(response, null, 2)
+        : 'No output received.'
+  } catch (err) {
+    console.error('Execution failed:', err)
+    executionError.value = 'Execution failed. Please try again.'
+  } finally {
+    runningCode.value = false
+  }
+}
+
+// --- Submit ---
+async function handleSubmit() {
+  if (!editor) return
+
+  // Save current question's code and time
+  saveCurrentCode()
+  saveCurrentTime()
+  stopTimer()
+
+  // Move to next question if not the last
+  if (currentQuestionIndex.value < questions.value.length - 1) {
+    currentQuestionIndex.value++
+    loadCurrentQuestionIntoEditor()
+    elapsedSeconds.value = 0
+    // Keep the accumulated time per question
+    if (!elapsedSecondsPerQuestion.value[currentQuestionIndex.value]) {
+      elapsedSecondsPerQuestion.value[currentQuestionIndex.value] = 0
+    }
+    return
+  }
+
+  // If last question, submit all
+  const challengeId = currentQuestion.value?.challenge_id || localStorage.getItem('currentChallengeId')
+  if (!challengeId) return
+
+  const submissions = questions.value.map((q, idx) => ({
+    question_id: q.id,
+    code: normalizeSourceCode(questionCode.value[idx] || ''),
+    elapsed_seconds: elapsedSecondsPerQuestion.value[idx] || 0,
+    notes: questionNotes.value[idx] || '',
+  }))
+
+  try {
+    await apiFetch(`/submissions/challenges/${challengeId}/submit-challenge`, {
+      method: 'POST',
+      body: { submissions },
+    })
+    showNotification('Challenge Submitted', 'Your answers have been submitted.', 'default')
+  } catch (err) {
+    console.error('Submission failed', err)
+    showNotification('Submission Failed', 'Please try again.', 'destructive')
+  }
 }
 
 const submitButtonLabel = computed(() => currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save')
@@ -235,9 +349,16 @@ function onMouseUp() {
 }
 </script>
 
-
 <template>
-  <div class="flex w-full h-screen">
+  <div class="flex w-full h-screen relative">
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+      <transition-group name="notif" tag="div">
+        <Alert v-for="notif in notifications" :key="notif.id" :variant="notif.variant">
+          <AlertTitle>{{ notif.title }}</AlertTitle>
+          <AlertDescription>{{ notif.description }}</AlertDescription>
+        </Alert>
+      </transition-group>
+    </div>
     <div class="flex-1 flex flex-col">
       <!-- Challenge Info -->
       <div class="mb-4 p-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 shadow flex flex-col sm:flex-row justify-between items-center">
@@ -267,7 +388,14 @@ function onMouseUp() {
           <Button variant="ghost" :leftIcon="Timer" @click="toggleTimer">
             {{ formattedTime }}
           </Button>
-          <Button variant="ghost" :leftIcon="BugPlay"></Button>
+          <Button
+              variant="ghost"
+              :leftIcon="BugPlay"
+              :disabled="runningCode"
+              @click="runCurrentCode"
+          >
+            {{ runningCode ? 'Running...' : 'Run Code' }}
+          </Button>
           <Button @click="loadCurrentQuestionIntoEditor">Reset to Starter Code</Button>
           <Button variant="outline" :leftIcon="Send" @click="handleSubmit">
             {{ submitButtonLabel }}
@@ -391,10 +519,22 @@ function onMouseUp() {
           <div :style="{ height: section3Height + '%' }" class="p-1 flex flex-col">
             <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
               <CircleCheck class="w-5 h-5 text-pink-600" />
-              <span>Testcases</span>
+              <span>Output</span>
             </div>
             <div class="flex-1 overflow-auto">
-              <!-- Testcase/output -->
+              <div v-if="runningCode" class="text-gray-500">Running code...</div>
+
+              <div v-else-if="executionError" class="text-red-500">
+                {{ executionError }}
+              </div>
+
+              <div v-else-if="executionOutput">
+                {{ executionOutput }}
+              </div>
+
+              <div v-else class="text-gray-500 dark:text-gray-400">
+                No output yet — click “Run Code” to execute.
+              </div>
             </div>
           </div>
         </div>
