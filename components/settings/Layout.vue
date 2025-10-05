@@ -9,7 +9,7 @@
         Settings
       </h2>
       <p class="text-muted-foreground">
-        Manage your account settings and set e-mail preferences.
+        Manage your account settings.
       </p>
     </div>
     <Separator class="my-6" />
@@ -17,7 +17,7 @@
       <div class="w-full overflow-x-auto pb-2 lg:w-1/6 lg:pb-0">
         <SettingsSidebarNav />
       </div>
-      <div class="flex-1 lg:max-w-2xl">
+      <div class="flex-1">
         <div class="space-y-6">
           <slot />
         </div>

@@ -26,7 +26,7 @@ export function getNavMenu(user: any): NavMenu[] {
         },
       ]
 
-      /*
+
     case 'admin':
       return [
         {
@@ -36,7 +36,7 @@ export function getNavMenu(user: any): NavMenu[] {
           ],
         },
       ]
-     */
+
 
     default:
       return []

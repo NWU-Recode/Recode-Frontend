@@ -21,7 +21,7 @@ function setLinks() {
     }
   })
 
-  return [{ title: 'Home', href: '/' }, ...breadcrumbs]
+  return [ ...breadcrumbs]
 }
 
 const links = ref<{

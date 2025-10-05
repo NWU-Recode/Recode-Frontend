@@ -14,33 +14,27 @@ const sidebarNavItems: Item[] = [
     href: '/settings/profile',
   },
   {
-    title: 'Account',
-    href: '/settings/account',
+    title: 'Modules',
+    href: '/settings/modules',
   },
   {
     title: 'Appearance',
     href: '/settings/appearance',
-  },
-  {
-    title: 'Notifications',
-    href: '/settings/notifications',
-  },
-  {
-    title: 'Display',
-    href: '/settings/display',
   },
 ]
 </script>
 
 <template>
   <nav class="flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-1">
-    <Button
+    <button
       v-for="item in sidebarNavItems"
       :key="item.title"
       variant="ghost"
       :class="cn(
-        'w-full text-left justify-start items-start',
-        route.path === item.href && 'bg-muted hover:bg-muted',
+        'w-full text-left justify-start items-start rounded-md px-3 py-2 transition-all duration-150',
+        route.path === item.href
+          ? 'bg-purple-200 text-purple-600 font-semibold hover:bg-purple-200 hover:text-purple-600'
+          : 'text-neutral-700 dark:text-neutral-200 hover:text-purple-600 hover:bg-transparent'
       )"
       as-child
     >
@@ -49,6 +43,6 @@ const sidebarNavItems: Item[] = [
       >
         {{ item.title }}
       </NuxtLink>
-    </Button>
+    </button>
   </nav>
 </template>

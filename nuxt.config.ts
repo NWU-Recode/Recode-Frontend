@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@pinia/nuxt',
     '@nuxtjs/color-mode',
+    'vue3-carousel-nuxt',
   ],
 
   css: [
@@ -41,6 +42,14 @@ export default defineNuxtConfig({
       './lib',
     ],
   },
+
+  components: [
+    {
+      path: '~/components/',
+      pathPrefix: true,
+      ignore: ['**/ui/**/*.ts']
+    },
+  ],
 
   runtimeConfig: {
     public: {
