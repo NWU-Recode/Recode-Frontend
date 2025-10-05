@@ -169,18 +169,41 @@ async function onSubmit(values: typeof profileFormSchema._type) {
     submitting.value = false
   }
 }
+
+watch(
+    () => props.profile,
+    (newProfile) => {
+      if (newProfile) {
+        setValues({
+          full_name: newProfile.full_name || '',
+          email: newProfile.email || '',
+          phone: newProfile.phone || '',
+          bio: newProfile.bio || '',
+          avatar_url: newProfile.avatar_url || '',
+        })
+        selectedAvatar.value = newProfile.avatar_url ?? null
+        avatarPreview.value = newProfile.avatar_url ?? null
+
+        if (newProfile.role === 'student' && newProfile.id) {
+          fetchBadgesForStudent(newProfile.id.toString())
+        }
+      }
+    },
+    { immediate: true }
+)
+
 </script>
 
 <template>
   <form class="space-y-8" @submit.prevent="submitForm">
     <!-- SECTION 1: Avatar + Name + Title -->
-    <Card class="p-6 items-center gap-6">
+    <Card class="p-4 md:p-6 flex flex-col items-center gap-4 md:gap-6">
       <div class="flex justify-center w-full pb-8">
         <AvatarCarousel v-model:selected="selectedAvatar" :profile="props.profile" />
       </div>
 
       <!-- Name + Title form fields -->
-      <div class="flex flex-col md:flex-row w-full gap-6 md:mt-0">
+      <div class="flex flex-col w-full gap-4 md:flex-row md:gap-6">
         <FormField v-slot="{ componentField }" name="full_name">
           <FormItem class="w-full">
             <FormLabel>Full Name</FormLabel>
@@ -230,22 +253,22 @@ async function onSubmit(values: typeof profileFormSchema._type) {
     </Card>
 
     <!-- SECTION 3: Personal Stats (Student only) -->
-    <Card v-if="props.profile.role === 'student'" class="p-6 space-y-6">
+    <Card v-if="props.profile.role === 'student'" class="p-4 md:p-6 space-y-4 md:space-y-6">
       <h3 class="text-lg font-medium">Personal Stats</h3>
 
-      <div class="flex flex-col md:flex-row items-center md:items-start justify-between mt-8">
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-6 mb-6 md:mb-0">
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+        <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-4 md:gap-6 w-full md:w-auto overflow-x-auto">
           <div
               v-for="(icon, index) in Object.keys(badgeIcons)"
               :key="index"
-              class="flex flex-col items-center"
+              class="flex flex-col items-center min-w-[50px]"
           >
             <img :src="badgeIcons[icon]" class="w-14 h-14" alt="" />
             <span class="text-lg mt-1">{{ badges[icon] || 0 }}</span>
           </div>
         </div>
 
-        <div class="flex flex-col items-end md:ml-6">
+        <div class="flex flex-col items-start md:items-end">
           <span class="text-sm text-neutral-500">Awarded title</span>
           <span class="text-2xl font-medium">{{ props.profile.title_name || 'Trainee' }}</span>
         </div>

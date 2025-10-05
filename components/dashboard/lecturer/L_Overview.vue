@@ -278,7 +278,7 @@ function loadCurrentQuestionIntoEditor() {
         style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))"
     >
       <!-- Description -->
-      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]">
+      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px] max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <BookOpenText class="w-5 h-5 text-pink-600" />
           <span>Description</span>
@@ -306,7 +306,7 @@ function loadCurrentQuestionIntoEditor() {
       </div>
 
         <!-- Code editor -->
-      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]">
+      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <CodeXml class="w-5 h-5 text-pink-600" />
           <span>Code</span>
@@ -315,7 +315,7 @@ function loadCurrentQuestionIntoEditor() {
       </div>
 
       <!-- Testcases -->
-      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]">
+      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <CircleCheck class="w-5 h-5 text-pink-600" />
           <span>Testcases</span>

@@ -47,7 +47,6 @@ const avgCompletionTime = computed(() => selectedChallenge?.value?.avg_completio
 
 // --- Badge image mapping ---
 const badgeImages: Record<string, string> = {
-  none: Bronze, // fallback
   Bronze,
   Silver,
   Gold,
@@ -214,11 +213,16 @@ onMounted(async () => {
                     <TableCell>{{ h.topic }}</TableCell>
                     <TableCell>{{ h.time }}</TableCell>
                     <TableCell>
-                      <img
-                          :src="badgeImages[h.badge]"
-                          class="w-6 h-6 sm:w-8 sm:h-8"
-                          :alt="h.badge"
-                      />
+                      <template v-if="h.badge && badgeImages[h.badge]">
+                        <img
+                            :src="badgeImages[h.badge]"
+                            class="w-6 h-6 sm:w-8 sm:h-8"
+                            :alt="h.badge"
+                        />
+                      </template>
+                      <template v-else>
+                        <span class="text-gray-400 italic">None</span>
+                      </template>
                     </TableCell>
                   </template>
                 </TableRow>
