@@ -52,6 +52,7 @@
     "@unovis/ts": "^1.5.1",
     "@unovis/vue": "^1.5.1",
     "@vercel/speed-insights": "^1.2.0",
+    "chart.js": "^4.5.0",
     "embla-carousel": "^8.5.2",
     "embla-carousel-vue": "^8.5.2",
     "monaco-editor": "^0.53.0",
