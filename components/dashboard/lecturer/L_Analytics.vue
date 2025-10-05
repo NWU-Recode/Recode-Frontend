@@ -288,9 +288,6 @@ onMounted(async () => {
 
     <!-- Graph placeholder -->
     <div class="h-64 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
-      <!-- <span class="text-sm sm:text-base text-gray-500 dark:text-gray-400">
-        Graph / analytics will go here
-      </span> -->
       <div class="space-y-10 px-4 sm:px-6 lg:px-8">
 
         <!-- Leaderboard Chart -->
@@ -302,7 +299,7 @@ onMounted(async () => {
         <div class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow">
           <canvas id="challengeChart"></canvas>
         </div>
-
+        
       </div>
     </div>
 
