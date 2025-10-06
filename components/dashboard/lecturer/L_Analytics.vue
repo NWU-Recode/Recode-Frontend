@@ -138,8 +138,13 @@ async function fetchChallengeProgress(moduleCode: string) {
   if (!token.value) return
 
   try {
-    const res = await apiFetch('/challenge/progress')
-    challengeProgressData.value = res
+    // Fetch all challenges and filter those belonging to the selected module
+    const res = await apiFetch('/challenge/progress', {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    const filtered = res.filter((c: any) => c.module_code === moduleCode)
+
+    challengeProgressData.value = filtered
     renderChallengeChart()
   } catch (err) {
     console.error('Failed to fetch challenge progress:', err)
