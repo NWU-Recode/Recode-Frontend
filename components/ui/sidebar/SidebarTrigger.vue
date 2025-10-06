@@ -15,7 +15,7 @@ const { toggleSidebar } = useSidebar()
 <template>
   <Button
     data-sidebar="trigger"
-    variant="ghost"
+    variant="link"
     size="icon"
     :class="cn('h-4 w-4', props.class)"
     @click="toggleSidebar"

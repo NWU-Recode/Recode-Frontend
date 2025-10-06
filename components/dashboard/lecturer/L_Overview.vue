@@ -197,7 +197,7 @@ function loadCurrentQuestionIntoEditor() {
           <div class="flex flex-col sm:flex-row sm:items-start justify-between mr-2">
             <div class="flex flex-col">
               <span class="text-sm">{{ card.module_code }}</span>
-              <span v-if="card.week_number != null" class="text-xs text-gray-500">
+              <span v-if="card.week_number != null" class="text-xs text-neutral-500">
                 Week: {{ card.week_number }}
               </span>
             </div>
@@ -239,7 +239,7 @@ function loadCurrentQuestionIntoEditor() {
           >
             <div class="flex flex-col">
               <span class="font-semibold">{{ challenge.title }}</span>
-              <span class="text-xs text-gray-500">{{ challenge.module_code }}</span>
+              <span class="text-xs text-neutral-500">{{ challenge.module_code }}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -293,13 +293,13 @@ function loadCurrentQuestionIntoEditor() {
             </template>
 
             <template v-else>
-              <p class="text-gray-500 dark:text-gray-400">
+              <p class="text-neutral-500">
                 No challenge data yet.
               </p>
             </template>
           </div>
 
-          <div v-else class="text-gray-500 dark:text-gray-400">
+          <div v-else class="text-neutral-500">
             Please select a challenge to view details.
           </div>
         </div>
@@ -326,7 +326,7 @@ function loadCurrentQuestionIntoEditor() {
               Testcases for this challenge will be displayed here.
             </p>
           </div>
-          <div v-else class="text-gray-500 dark:text-gray-400">
+          <div v-else class="text-neutral-500">
             Select a challenge to view its testcases.
           </div>
         </div>
