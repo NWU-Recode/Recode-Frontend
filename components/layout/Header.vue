@@ -15,9 +15,9 @@ function setLinks() {
   const breadcrumbs = segments.map((item, index) => {
     const str = item.replace(/-/g, ' ')
     const title = str
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
 
     return {
       title,
@@ -25,10 +25,13 @@ function setLinks() {
     }
   })
 
-  return [...breadcrumbs]
+  return [ ...breadcrumbs]
 }
 
-const links = ref<{ title: string; href: string }[]>(setLinks())
+const links = ref<{
+  title: string
+  href: string
+}[]>(setLinks())
 
 watch(() => route.fullPath, (val) => {
   if (val) {
@@ -36,7 +39,7 @@ watch(() => route.fullPath, (val) => {
   }
 })
 
-// -------------------- Notifications --------------------
+// Notifications
 const notifications = ref<any[]>([])
 const unreadCount = ref(0)
 const showDropdown = ref(false)
@@ -81,7 +84,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-10 h-53px flex items-center gap-4 border-b bg-background px-4 md:px-6 relative">
+  <header class="sticky top-0 z-10 h-53px flex items-center gap-4 border-b bg-background px-4 md:px-6">
     <div class="w-full flex items-center gap-4">
       <SidebarTrigger />
       <Separator orientation="vertical" class="h-4" />
@@ -91,10 +94,10 @@ onMounted(() => {
     <!-- Notification Bell -->
     <div class="ml-auto relative">
       <button @click="toggleDropdown" class="relative">
-        <Bell class="w-6 h-6 text-gray-700" />
+        <Bell class="w-5 h-5" />
         <span
             v-if="unreadCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+            class="absolute -top-1 -right-1 bg-red-400 text-white text-xs font-bold rounded-full h-3 w-3 flex items-center justify-center"
         >
           {{ unreadCount }}
         </span>
@@ -103,12 +106,12 @@ onMounted(() => {
       <!-- Dropdown -->
       <div
           v-if="showDropdown"
-          class="absolute right-6 mt-3 w-64 bg-white border rounded-lg shadow-lg z-50"
+          class="absolute -right-1 mt-6 w-100 bg-background border rounded-lg shadow-lg z-50"
       >
         <!-- Header -->
-        <div class="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-          <span class="font-medium text-sm text-gray-700">Notifications</span>
-          <button @click="fetchNotifications" class="text-gray-500 hover:text-gray-700 transition">
+        <div class="flex items-center justify-between px-4 py-2 border-b">
+          <span class="font-medium text-sm ">Notifications</span>
+          <button @click="fetchNotifications">
             <RefreshCw
                 :class="['w-4 h-4', isRefreshing ? 'animate-spin text-blue-500' : '']"
             />
@@ -116,7 +119,7 @@ onMounted(() => {
         </div>
 
         <!-- Notifications -->
-        <div v-if="notifications.length === 0" class="p-4 text-center text-gray-500">
+        <div v-if="notifications.length === 0" class="p-4 text-center text-neutral-500">
           No new notifications
         </div>
         <ul v-else>
@@ -124,7 +127,7 @@ onMounted(() => {
               v-for="n in notifications"
               :key="n.id"
               @click="markAsRead(n.id)"
-              class="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+              class="px-4 py-2 hover:bg-purple-400 cursor-pointer border-b last:border-b-0"
           >
             {{ n.message }}
           </li>
@@ -139,5 +142,4 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* no extra styles added */
 </style>
