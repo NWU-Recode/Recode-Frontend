@@ -287,7 +287,7 @@ onMounted(async () => {
     </div>
 
     <!-- Graph placeholder -->
-    <div class="h-64 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
+    <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
       <div class="space-y-10 px-4 sm:px-6 lg:px-8">
 
         <!-- Leaderboard Chart -->

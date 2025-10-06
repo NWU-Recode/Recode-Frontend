@@ -120,7 +120,7 @@ function renderLeaderboardChart() {
           label: 'Current ELO',
           data: leaderboard.value.map((s: any) => s.current_elo),
           backgroundColor: 'rgba(54, 162, 235, 0.7)',
-          borderColor: 'rgba(54, 162, 235, 1)',
+          borderColor: 'rgb(115,126,138)',
           borderWidth: 1,
         },
       ],
@@ -187,7 +187,7 @@ watch(podium, () => {
 
 <template>
   <!-- Graph placeholder -->
-  <div class="mt-8 h-72 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow">
+  <div class="mt-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow">
     <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
       <canvas id="leaderboardChart"></canvas>
     </div>
