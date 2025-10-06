@@ -137,7 +137,7 @@ onMounted(async () => {
       </div>
 
       <!-- Right: Current Week -->
-      <div class="text-right text-xl sm:text-2xl font-semibold text-gray-700">
+      <div class="text-right text-xl sm:text-2xl font-semibold text-neutral-700">
         Current Week: <span v-if="currentWeek">{{ currentWeek }}</span><span v-else>N/A</span>
       </div>
     </div>
@@ -155,7 +155,7 @@ onMounted(async () => {
           <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-2">
             <div class="flex flex-col">
               <span class="text-sm">{{ challenge.moduleCode }}</span>
-              <span v-if="challenge.week_number != null" class="text-xs text-gray-500">
+              <span v-if="challenge.week_number != null" class="text-xs text-neutral-500">
                 Week: {{ challenge.week_number }}
               </span>
             </div>
@@ -167,7 +167,7 @@ onMounted(async () => {
           <!-- Badge Progress Bar -->
           <div class="mt-2 mb-2 relative flex items-center w-full">
             <!-- Connector Line -->
-            <div class="absolute top-8 sm:top-10 left-0 w-full h-1 bg-gray-300 z-0 rounded">
+            <div class="absolute top-8 sm:top-10 left-0 w-full h-1 bg-neutral-300 z-0 rounded">
               <div
                   class="h-1 bg-purple-400 rounded"
                   :style="{
@@ -210,7 +210,7 @@ onMounted(async () => {
           </div>
 
           <!-- Progress Text -->
-          <div class="mt-2 text-sm text-gray-700 break-words">
+          <div class="mt-2 text-sm text-neutral-500 break-words">
             {{ challenge.completedQuestions }} / {{ challenge.totalQuestions }} questions completed
             ({{ challengeProgressPercentage(challenge) }}%)
           </div>
