@@ -2,11 +2,37 @@
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useApiFetch } from '@/composables/useApiFetch'
-import { ChevronLeft, ChevronRight, Timer, BugPlay, Send, BookOpenText, NotebookPen, CodeXml, CircleCheck } from 'lucide-vue-next'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Timer,
+  BugPlay,
+  Send,
+  BookOpenText,
+  NotebookPen,
+  CodeXml,
+  CircleCheck,
+  XCircle
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import bronzeIcon from '~/assets/flat-icons/bronze.png'
+import silverIcon from '~/assets/flat-icons/silver.png'
+import goldIcon from '~/assets/flat-icons/gold.png'
+import rubyIcon from '~/assets/flat-icons/ruby.png'
+import emeraldIcon from '~/assets/flat-icons/emerald.png'
+import diamondIcon from '~/assets/flat-icons/diamond.png'
 
 const { apiFetch } = useApiFetch()
+
+const tierIcons: Record<string, string> = {
+  Bronze: bronzeIcon,
+  Silver: silverIcon,
+  Gold: goldIcon,
+  Ruby: rubyIcon,
+  Emerald: emeraldIcon,
+  Diamond: diamondIcon
+}
 
 // --- State ---
 const challengeInfo = ref<{ moduleCode?: string; challengeName?: string }>({})
@@ -25,6 +51,7 @@ const questionCode = ref<string[]>([])
 
 // --- Timer per question ---
 const elapsedSecondsPerQuestion = ref<number[]>([])
+const elapsedSeconds = ref(0)
 const timerRunning = ref(false)
 let timerInterval: ReturnType<typeof setInterval> | null = null
 
@@ -34,24 +61,16 @@ watch(currentQuestionIndex, (newIdx, oldIdx) => {
   executionOutput.value = ''
   executionError.value = ''
 
-  // Save previous question's code and accumulated time
   if (oldIdx !== undefined) saveCurrentCode()
   saveCurrentTime()
   stopTimer()
 
-  // Start fresh timer for this session
   elapsedSeconds.value = 0
-
-  // Initialize accumulated time if needed
   if (!elapsedSecondsPerQuestion.value[newIdx]) elapsedSecondsPerQuestion.value[newIdx] = 0
 
-  // Load the new question code
   const codeToLoad = questionCode.value[newIdx] || currentQuestion.value?.starter_code || ''
   editor.setValue(normalizeSourceCode(codeToLoad))
 })
-
-// --- Timer reactive ---
-const elapsedSeconds = ref(0)
 
 // --- Helper to normalize source code ---
 function normalizeSourceCode(code: string) {
@@ -71,7 +90,6 @@ interface Notification {
 }
 const notifications = ref<Notification[]>([])
 let notifIdCounter = 0
-
 function showNotification(title: string, description: string, variant: 'default' | 'destructive' = 'destructive') {
   const id = notifIdCounter++
   notifications.value.push({ id, title, description, variant })
@@ -91,7 +109,6 @@ onMounted(() => {
       readOnly: true,
     })
 
-    // Capture typing in read-only editor
     editor.onDidAttemptReadOnlyEdit(() => {
       showNotification(
           'Cannot edit yet',
@@ -101,8 +118,8 @@ onMounted(() => {
     })
   }
 
-  if (window.history.state) {
-    const state = window.history.state
+  const state = window.history.state
+  if (state) {
     challengeInfo.value.moduleCode = state.moduleCode
     challengeInfo.value.challengeName = state.challengeName
   }
@@ -116,16 +133,49 @@ async function fetchQuestions() {
     const challengeId = localStorage.getItem('currentChallengeId')
     if (!challengeId) return
 
+    // 1️⃣ Get basic questions list
     const data = await apiFetch(`/challenges/${challengeId}/questions`)
-    questions.value = data.items || []
+    const basicQuestions = data.items || []
 
-    questions.value.forEach((q, idx) => {
+    // 2️⃣ Fetch full bundle for each question
+    const fullQuestions = await Promise.all(
+        basicQuestions.map(async (q: any) => {
+          try {
+            const bundle = await apiFetch(
+                `/submissions/challenges/${challengeId}/questions/${q.id}/bundle`
+            )
+
+            // Merge bundle info into question object
+            return {
+              ...q,
+              prompt: bundle.prompt,
+              starter_code: bundle.starter_code,
+              reference_solution: bundle.reference_solution,
+              testcases: bundle.tests?.map((t: any) => ({
+                input: t.input,
+                expected: t.expected,
+                id: t.id,
+                passed: undefined,
+                got: ''
+              })) ?? []
+            }
+          } catch (err) {
+            console.error('Failed to fetch bundle for question', q.id, err)
+            return { ...q, testcases: [] }
+          }
+        })
+    )
+
+    questions.value = fullQuestions
+
+    // Initialize code and timers
+    fullQuestions.forEach((q, idx) => {
       questionCode.value[idx] = q.starter_code ?? ''
       elapsedSecondsPerQuestion.value[idx] = 0
       if (questionNotes.value[idx] === undefined) questionNotes.value[idx] = ''
     })
 
-    if (questions.value.length > 0) {
+    if (fullQuestions.length > 0) {
       currentQuestionIndex.value = 0
       loadCurrentQuestionIntoEditor()
     }
@@ -145,7 +195,6 @@ function nextQuestion() {
     showNotification('Timer Running', 'Please stop the timer before moving to the next question.')
     return
   }
-
   if (currentQuestionIndex.value < questions.value.length - 1) {
     executionOutput.value = ''
     executionError.value = ''
@@ -159,7 +208,6 @@ function prevQuestion() {
     showNotification('Timer Running', 'Please stop the timer before moving to the previous question.')
     return
   }
-
   if (currentQuestionIndex.value > 0) {
     executionOutput.value = ''
     executionError.value = ''
@@ -176,15 +224,14 @@ function saveCurrentCode() {
 
 function loadCurrentQuestionIntoEditor() {
   if (!editor || !currentQuestion.value) return
+  const savedCode = questionCode.value[currentQuestionIndex.value]
   const starterCode = currentQuestion.value.starter_code ?? ''
-  questionCode.value[currentQuestionIndex.value] = starterCode
-  editor.setValue(normalizeSourceCode(starterCode))
+  editor.setValue(normalizeSourceCode(savedCode || starterCode))
   nextTick(() => editor?.layout())
 }
 
 // --- Timer helpers ---
 function saveCurrentTime() {
-  // Accumulate time: previous + this session
   elapsedSecondsPerQuestion.value[currentQuestionIndex.value] += elapsedSeconds.value
   elapsedSeconds.value = 0
 }
@@ -216,6 +263,13 @@ const formattedTime = computed(() => {
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':')
 })
 
+function formatInput(input: string) {
+  if (!input) return []
+  return input.split('\n')
+}
+
+
+// --- Run Code ---
 const runningCode = ref(false)
 const executionOutput = ref('')
 const executionError = ref('')
@@ -225,28 +279,51 @@ async function runCurrentCode() {
     showNotification('Start Timer', 'Please start the timer before running code.')
     return
   }
-
   if (!editor || !currentQuestion.value) return
 
+  saveCurrentCode()
   const code = editor.getValue()
-  const languageId = 71
-  const questionId = currentQuestion.value.id
 
   runningCode.value = true
   executionOutput.value = ''
   executionError.value = ''
 
   try {
-    const response = await apiFetch('/judge0/execute/stdout', {
-      method: 'POST',
-      body: { source_code: code, language_id: languageId, stdin: '' },
-    })
+    const testcases = currentQuestion.value.testcases ?? []
+    if (testcases.length === 0) {
+      executionOutput.value = 'No test cases available for this question.'
+      return
+    }
 
-    executionOutput.value = response
-        ? typeof response === 'string'
-            ? response
-            : JSON.stringify(response, null, 2)
-        : 'No output received.'
+    // Run each testcase sequentially
+    for (const tc of testcases) {
+      try {
+        const response: any = await apiFetch('/judge0/execute/simple', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            source_code: code,
+            language_id: currentQuestion.value.language_id ?? 71,
+            stdin: tc.input ?? ''
+          }
+        })
+
+        // Judge0 response
+        tc.got = response.stdout?.trim() ?? ''
+        tc.passed = (tc.got === (tc.expected ?? '').trim())
+
+      } catch (err) {
+        console.error('Execution failed for testcase', tc, err)
+        tc.got = ''
+        tc.passed = false
+      }
+    }
+
+    // Update main output section with summary
+    executionOutput.value = testcases.map((tc, idx) =>
+        `Test Case ${idx + 1}: ${tc.passed ? 'Passed ✅' : 'Failed ❌'}`
+    ).join('\n')
+
   } catch (err) {
     console.error('Execution failed:', err)
     executionError.value = 'Execution failed. Please try again.'
@@ -259,47 +336,49 @@ async function runCurrentCode() {
 async function handleSubmit() {
   if (!editor) return
 
-  // Save current question's code and time
   saveCurrentCode()
   saveCurrentTime()
   stopTimer()
 
-  // Move to next question if not the last
   if (currentQuestionIndex.value < questions.value.length - 1) {
     currentQuestionIndex.value++
     loadCurrentQuestionIntoEditor()
     elapsedSeconds.value = 0
-    // Keep the accumulated time per question
-    if (!elapsedSecondsPerQuestion.value[currentQuestionIndex.value]) {
-      elapsedSecondsPerQuestion.value[currentQuestionIndex.value] = 0
-    }
+    timerRunning.value = false
     return
   }
 
-  // If last question, submit all
   const challengeId = currentQuestion.value?.challenge_id || localStorage.getItem('currentChallengeId')
   if (!challengeId) return
 
-  const submissions = questions.value.map((q, idx) => ({
-    question_id: q.id,
-    code: normalizeSourceCode(questionCode.value[idx] || ''),
-    elapsed_seconds: elapsedSecondsPerQuestion.value[idx] || 0,
-    notes: questionNotes.value[idx] || '',
-  }))
+  const submissionsPayload: Record<string, { source_code: string; language_id: number }> = {}
+  questions.value.forEach((q, idx) => {
+    submissionsPayload[`${q.id}`] = {
+      source_code: normalizeSourceCode(questionCode.value[idx] || ''),
+      language_id: 71,
+    }
+  })
+
+  const totalDuration = elapsedSecondsPerQuestion.value.reduce((a, b) => a + b, 0)
 
   try {
     await apiFetch(`/submissions/challenges/${challengeId}/submit-challenge`, {
       method: 'POST',
-      body: { submissions },
+      body: { submissions: submissionsPayload, duration_seconds: totalDuration },
     })
     showNotification('Challenge Submitted', 'Your answers have been submitted.', 'default')
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 2000)
   } catch (err) {
     console.error('Submission failed', err)
     showNotification('Submission Failed', 'Please try again.', 'destructive')
   }
 }
 
-const submitButtonLabel = computed(() => currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save')
+const submitButtonLabel = computed(() =>
+    currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save'
+)
 
 // --- UI state ---
 const showDescription = ref(true)
@@ -308,10 +387,7 @@ const section2Height = ref(60)
 const section3Height = ref(40)
 
 // --- Divider Drag Logic ---
-let startY = 0
-let startSection2Height = 0
-let startSection3Height = 0
-let isDragging = false
+let startY = 0, startSection2Height = 0, startSection3Height = 0, isDragging = false
 
 function onMouseDown(e: MouseEvent) {
   isDragging = true
@@ -326,18 +402,14 @@ function onMouseMove(e: MouseEvent) {
   if (!isDragging) return
   const container = document.querySelector('.w-2\\/3.flex.flex-col') as HTMLElement
   if (!container) return
-  const containerHeight = container.clientHeight
   const deltaY = e.clientY - startY
-  const deltaPercent = (deltaY / containerHeight) * 100
+  const deltaPercent = (deltaY / container.clientHeight) * 100
 
   let newSection2Height = startSection2Height + deltaPercent
   let newSection3Height = startSection3Height - deltaPercent
 
-  newSection2Height = Math.max(10, Math.min(90, newSection2Height))
-  newSection3Height = Math.max(10, Math.min(90, newSection3Height))
-
-  section2Height.value = newSection2Height
-  section3Height.value = newSection3Height
+  section2Height.value = Math.max(10, Math.min(90, newSection2Height))
+  section3Height.value = Math.max(10, Math.min(90, newSection3Height))
 
   nextTick(() => editor?.layout())
 }
@@ -348,6 +420,7 @@ function onMouseUp() {
   window.removeEventListener('mouseup', onMouseUp)
 }
 </script>
+
 
 <template>
   <div class="flex w-full h-screen relative">
@@ -412,7 +485,7 @@ function onMouseUp() {
       <div class="flex flex-1 gap-4 p-4">
 
         <!-- Section 1: Description / Notes -->
-        <div class="w-1/3 max-h-screen overflow-auto rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col">
+        <div class="w-1/3 max-h-[700px] overflow-auto rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col">
           <div class="flex items-center gap-4 mb-4">
             <button
                 @click="showDescription = true; showNotes = false"
@@ -436,7 +509,7 @@ function onMouseUp() {
           </div>
 
           <!-- Content -->
-          <div class="flex-1 overflow-auto p-2">
+          <div class="flex-1">
             <div v-if="currentQuestion" class="space-y-4">
               <!-- Description Tab -->
               <div v-if="showDescription">
@@ -445,33 +518,40 @@ function onMouseUp() {
                   <h3 class="text-lg font-bold text-purple-400">
                     Question {{ currentQuestionIndex + 1 }}:
                   </h3>
-                  <span class="text-sm font-medium text-gray-500">
+                  <span class="text-sm font-medium flex justify-center items-center gap-1">
                     Tier: {{ currentQuestion.tier }}
+                    <img
+                        v-if="tierIcons[currentQuestion.tier]"
+                        :src="tierIcons[currentQuestion.tier]"
+                        alt=""
+                        class="w-7 h-7"
+                    />
                   </span>
                 </div>
 
+
                 <!-- Problem Statement -->
-                <div class="border-gray-200 dark:border-neutral-700 rounded-md p-4 shadow-sm">
-                  <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                <div class="border-neutral-200 dark:border-neutral-700 rounded-md p-2">
+                  <p class="text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
                     {{ currentQuestion.prompt }}
                   </p>
                 </div>
 
                 <!-- Input / Output Examples -->
                 <div v-if="currentQuestion.examples?.length" class="space-y-2">
-                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Examples:</h4>
-                  <div v-for="(ex, idx) in currentQuestion.examples" :key="idx" class="bg-gray-100 dark:bg-neutral-700 rounded-md p-3 border border-gray-200 dark:border-neutral-600">
+                  <h4 class="font-semibold text-neutral-700 dark:text-neutral-300">Examples:</h4>
+                  <div v-for="(ex, idx) in currentQuestion.examples" :key="idx" class="bg-neutral-100 dark:bg-neutral-700 rounded-md p-3 border border-neutral-200 dark:border-neutral-600">
                     <p><span class="font-semibold">Input:</span></p>
-                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.input }}</pre>
+                    <pre class="bg-neutral-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.input }}</pre>
                     <p class="mt-1"><span class="font-semibold">Output:</span></p>
-                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.output }}</pre>
+                    <pre class="bg-neutral-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.output }}</pre>
                   </div>
                 </div>
 
                 <!-- Constraints -->
                 <div v-if="currentQuestion.constraints?.length" class="mt-2">
-                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Constraints:</h4>
-                  <ul class="list-disc list-inside text-gray-800 dark:text-gray-200">
+                  <h4 class="font-semibold text-neutral-700 dark:text-neutral-300">Constraints:</h4>
+                  <ul class="list-disc list-inside text-neutral-800 dark:text-neutral-200">
                     <li v-for="(c, i) in currentQuestion.constraints" :key="i">{{ c }}</li>
                   </ul>
                 </div>
@@ -480,20 +560,20 @@ function onMouseUp() {
               <div v-else-if="showNotes" class="flex flex-col h-full">
                 <textarea
                     v-model="questionNotes[currentQuestionIndex]"
-                    class="flex-1 w-full rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    class="flex-1 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Write your notes here..."
                 ></textarea>
               </div>
             </div>
 
-            <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+            <div v-else class="flex items-center justify-center h-full text-neutral-500 dark:text-neutral-400">
               No question loaded
             </div>
           </div>
         </div>
 
         <!-- Section 2 & 3: Right Column with resizable divider -->
-        <div class="w-2/3 flex flex-col gap-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 overflow-hidden">
+        <div class="max-h-[700px] w-2/3 flex flex-col gap-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 overflow-hidden">
 
           <!-- Section 2: Code Editor -->
           <div :style="{ height: section2Height + '%' }" class="p-1 flex flex-col">
@@ -502,7 +582,7 @@ function onMouseUp() {
                 <CodeXml class="w-5 h-5 text-pink-600" />
                 <span>Code</span>
               </div>
-              <span class="px-3 py-1 rounded-md bg-gray-200 dark:bg-neutral-700 text-sm font-medium">
+              <span class="px-3 py-1 rounded-md bg-neutral-200 dark:bg-neutral-700 text-sm font-medium">
                 Python
               </span>
             </div>
@@ -521,18 +601,63 @@ function onMouseUp() {
               <CircleCheck class="w-5 h-5 text-pink-600" />
               <span>Output</span>
             </div>
-            <div class="flex-1 overflow-auto">
-              <div v-if="runningCode" class="text-gray-500">Running code...</div>
 
+            <div class="flex-1 overflow-auto space-y-2">
+              <!-- Running -->
+              <div v-if="runningCode" class="text-neutral-500">Running code...</div>
+
+              <!-- General Execution Error -->
               <div v-else-if="executionError" class="text-red-500">
                 {{ executionError }}
               </div>
 
-              <div v-else-if="executionOutput">
-                {{ executionOutput }}
+              <!-- Testcases -->
+              <div v-else-if="currentQuestion?.testcases?.length">
+                <div v-for="(tc, idx) in currentQuestion.testcases" :key="idx" class="p-2 border rounded-md">
+                  <!-- Pass/Fail Icon -->
+                  <div class="flex items-center gap-2 mb-1 ">
+                    <component
+                        v-if="tc.passed !== undefined"
+                        :is="tc.passed ? CircleCheck : XCircle"
+                        :class="tc.passed ? 'text-green-500 w-5 h-5' : 'text-red-500 w-5 h-5'"
+                    />
+                    <span class="font-semibold text-sm">Test Case {{ idx + 1 }}</span>
+                  </div>
+
+                  <!-- Input -->
+                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                    <span class="font-semibold">Input:</span>
+                    <div class="ml-2 mt-1 space-y-0.5">
+                      <div v-for="(line, i) in formatInput(tc.input)" :key="i" class="font-mono">
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Expected -->
+                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                    <span class="font-semibold">Expected:</span>
+                    <div class="ml-2 mt-1 space-y-0.5">
+                      <div v-for="(line, i) in formatInput(tc.expected)" :key="i" class="font-mono">
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Got -->
+                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                    <span class="font-semibold">Your output:</span>
+                    <div class="ml-2 mt-1 space-y-0.5">
+                      <div v-for="(line, i) in formatInput(tc.got)" :key="i" class="font-mono">
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div v-else class="text-gray-500 dark:text-gray-400">
+              <!-- No output yet -->
+              <div v-else class="text-neutral-500 dark:text-neutral-400">
                 No output yet — click “Run Code” to execute.
               </div>
             </div>
