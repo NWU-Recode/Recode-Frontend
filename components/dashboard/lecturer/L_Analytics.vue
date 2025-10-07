@@ -137,7 +137,7 @@ onMounted(async () => {
           >
             <div class="flex flex-col">
               <span class="font-semibold">{{ mod.name }}</span>
-              <span class="text-xs text-gray-500">{{ mod.code }}</span>
+              <span class="text-xs text-neutral-500">{{ mod.code }}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -170,7 +170,7 @@ onMounted(async () => {
 
     <!-- Graph placeholder -->
     <div class="h-64 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
-      <span class="text-sm sm:text-base text-gray-500 dark:text-gray-400">
+      <span class="text-sm sm:text-base text-neutral-500">
         Graph / analytics will go here
       </span>
     </div>
@@ -221,7 +221,7 @@ onMounted(async () => {
                         />
                       </template>
                       <template v-else>
-                        <span class="text-gray-400 italic">None</span>
+                        <span class="text-neutral-500 italic">None</span>
                       </template>
                     </TableCell>
                   </template>

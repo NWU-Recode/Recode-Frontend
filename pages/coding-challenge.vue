@@ -445,33 +445,33 @@ function onMouseUp() {
                   <h3 class="text-lg font-bold text-purple-400">
                     Question {{ currentQuestionIndex + 1 }}:
                   </h3>
-                  <span class="text-sm font-medium text-gray-500">
+                  <span class="text-sm font-medium text-neutral-500">
                     Tier: {{ currentQuestion.tier }}
                   </span>
                 </div>
 
                 <!-- Problem Statement -->
-                <div class="border-gray-200 dark:border-neutral-700 rounded-md p-4 shadow-sm">
-                  <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                <div class="border-neutral-200 dark:border-neutral-700 rounded-md p-4 shadow-sm">
+                  <p class="text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap">
                     {{ currentQuestion.prompt }}
                   </p>
                 </div>
 
                 <!-- Input / Output Examples -->
                 <div v-if="currentQuestion.examples?.length" class="space-y-2">
-                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Examples:</h4>
-                  <div v-for="(ex, idx) in currentQuestion.examples" :key="idx" class="bg-gray-100 dark:bg-neutral-700 rounded-md p-3 border border-gray-200 dark:border-neutral-600">
+                  <h4 class="font-semibold text-neutral-700 dark:text-neutral-300">Examples:</h4>
+                  <div v-for="(ex, idx) in currentQuestion.examples" :key="idx" class="bg-neutral-100 dark:bg-neutral-700 rounded-md p-3 border border-neutral-200 dark:border-neutral-600">
                     <p><span class="font-semibold">Input:</span></p>
-                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.input }}</pre>
+                    <pre class="bg-neutral-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.input }}</pre>
                     <p class="mt-1"><span class="font-semibold">Output:</span></p>
-                    <pre class="bg-gray-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.output }}</pre>
+                    <pre class="bg-neutral-200 dark:bg-neutral-600 p-2 rounded text-sm overflow-x-auto">{{ ex.output }}</pre>
                   </div>
                 </div>
 
                 <!-- Constraints -->
                 <div v-if="currentQuestion.constraints?.length" class="mt-2">
-                  <h4 class="font-semibold text-gray-700 dark:text-gray-300">Constraints:</h4>
-                  <ul class="list-disc list-inside text-gray-800 dark:text-gray-200">
+                  <h4 class="font-semibold text-neutral-700 dark:text-neutral-300">Constraints:</h4>
+                  <ul class="list-disc list-inside text-neutral-800 dark:text-neutral-200">
                     <li v-for="(c, i) in currentQuestion.constraints" :key="i">{{ c }}</li>
                   </ul>
                 </div>
@@ -480,13 +480,13 @@ function onMouseUp() {
               <div v-else-if="showNotes" class="flex flex-col h-full">
                 <textarea
                     v-model="questionNotes[currentQuestionIndex]"
-                    class="flex-1 w-full rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    class="flex-1 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Write your notes here..."
                 ></textarea>
               </div>
             </div>
 
-            <div v-else class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+            <div v-else class="flex items-center justify-center h-full text-neutral-500 dark:text-neutral-400">
               No question loaded
             </div>
           </div>
@@ -502,7 +502,7 @@ function onMouseUp() {
                 <CodeXml class="w-5 h-5 text-pink-600" />
                 <span>Code</span>
               </div>
-              <span class="px-3 py-1 rounded-md bg-gray-200 dark:bg-neutral-700 text-sm font-medium">
+              <span class="px-3 py-1 rounded-md bg-neutral-200 dark:bg-neutral-700 text-sm font-medium">
                 Python
               </span>
             </div>
@@ -522,7 +522,7 @@ function onMouseUp() {
               <span>Output</span>
             </div>
             <div class="flex-1 overflow-auto">
-              <div v-if="runningCode" class="text-gray-500">Running code...</div>
+              <div v-if="runningCode" class="text-neutral-500">Running code...</div>
 
               <div v-else-if="executionError" class="text-red-500">
                 {{ executionError }}
@@ -532,7 +532,7 @@ function onMouseUp() {
                 {{ executionOutput }}
               </div>
 
-              <div v-else class="text-gray-500 dark:text-gray-400">
+              <div v-else class="text-neutral-500 dark:text-neutral-400">
                 No output yet — click “Run Code” to execute.
               </div>
             </div>
