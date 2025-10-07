@@ -35,18 +35,18 @@ const __options = computed(() => {
   <div :class="direction === 'horizontal' ? 'flex flex-row gap-2' : 'flex flex-col space-y-2'">
     <template v-for="option of __options" :key="option.value">
       <div
-        v-if="option.visible"
-        class="relative"
-        :data-tooltip-target="option.tooltip && `option-${option.value}`"
+          v-if="option.visible"
+          class="relative"
+          :data-tooltip-target="option.tooltip && `option-${option.value}`"
       >
         <button
-          class="h-10 inline-flex items-center rounded-md px-3 py-2 transition-all duration-150"
-          :class="[
+            class="h-10 inline-flex items-center rounded-md px-3 py-2 transition-all duration-150"
+            :class="[
             option.selected
               ? 'bg-purple-200 text-purple-600 font-semibold'
               : 'text-neutral-700 dark:text-neutral-200 hover:text-purple-400 hover:bg-transparent',
           ]"
-          @click="clickOption(option.value)"
+            @click="clickOption(option.value)"
         >
           <div class="text-md w-full justify-start text-left font-semibold leading-none">
             {{ option.name }}

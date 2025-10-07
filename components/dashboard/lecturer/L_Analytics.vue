@@ -58,7 +58,7 @@ function renderLeaderboardChart() {
     type: 'bar',
     data: {
       labels: leaderboardData.value.map(
-        (s: any) => `${s.full_name} (#${s.global_rank})`
+          (s: any) => `${s.full_name} (#${s.global_rank})`
       ),
       datasets: [
         {
@@ -350,7 +350,7 @@ onMounted(async () => {
                   : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
               ]"
           >
-              {{ tab }}
+            {{ tab }}
           </button>
         </div>
 

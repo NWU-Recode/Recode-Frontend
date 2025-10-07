@@ -8,9 +8,14 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div class="relative w-full overflow-x-auto">
-    <table :class="cn('min-w-full table-fixed caption-bottom text-sm', props.class)">
-      <slot />
-    </table>
+  <div
+      :class="
+      cn(
+        'rounded-lg overflow-hidden relative shadow-[0px_0px_10px_1px_rgb(96,165,250)] border bg-card text-card-foreground',
+        props.class,
+      )
+    "
+  >
+    <slot />
   </div>
 </template>

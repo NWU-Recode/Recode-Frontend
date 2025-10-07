@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter, useRuntimeConfig } from '#app'
 import { Loader2 } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import PasswordInput from '~/components/PasswordInput.vue'
 import { useAuth } from '~/composables/useAuth'
@@ -20,12 +20,38 @@ const router = useRouter()
 const config = useRuntimeConfig()
 const auth = useAuth()
 
+// Computed email validation
+const emailError = computed(() => {
+  if (!email.value) return ''
+  const [localPart, domain] = email.value.split('@')
+  const num = Number(localPart)
+  if (!/^\d{8}$/.test(localPart) || num < 11111111 || num > 99999999) {
+    return 'Email must start with your student number'
+  }
+  if (domain !== 'mynwu.ac.za') {
+    return 'Email must end with @mynwu.ac.za'
+  }
+
+  return ''
+})
+
+
+// Disable button if email invalid or form loading
+const canSubmit = computed(() => {
+  return !isLoading.value && !emailError.value
+})
+
 async function onSubmit(event: Event) {
   event.preventDefault()
   errors.value = {}
 
   if (!full_name.value || !email.value || !password.value || !confirmPassword.value || !student_number.value) {
     errors.value.general = 'All fields are required'
+    return
+  }
+
+  if (emailError.value) {
+    errors.value.email = emailError.value
     return
   }
 
@@ -63,6 +89,11 @@ async function onSubmit(event: Event) {
     isLoading.value = false
   }
 }
+
+// Watch email to clear email error when fixed
+watch(email, () => {
+  if (errors.value.email) errors.value.email = ''
+})
 </script>
 
 <template>
@@ -73,14 +104,14 @@ async function onSubmit(event: Event) {
         <div class="grid gap-2">
           <Label for="full_name">Name</Label>
           <Input
-            id="full_name"
-            v-model="full_name"
-            placeholder="Enter your name"
-            type="text"
-            auto-capitalize="none"
-            auto-complete="name"
-            auto-correct="off"
-            :disabled="isLoading"
+              id="full_name"
+              v-model="full_name"
+              placeholder="Enter your name"
+              type="text"
+              auto-capitalize="none"
+              auto-complete="name"
+              auto-correct="off"
+              :disabled="isLoading"
           />
         </div>
 
@@ -88,28 +119,31 @@ async function onSubmit(event: Event) {
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input
-            id="email"
-            v-model="email"
-            placeholder="name@example.com"
-            type="email"
-            auto-capitalize="none"
-            auto-complete="email"
-            auto-correct="off"
-            :disabled="isLoading"
+              id="email"
+              v-model="email"
+              placeholder="12345678@mynwu.ac.za"
+              type="email"
+              auto-capitalize="none"
+              auto-complete="email"
+              auto-correct="off"
+              :disabled="isLoading"
           />
+          <p v-if="emailError" class="text-sm text-red-500">
+            {{ emailError }}
+          </p>
         </div>
 
         <!-- Student number -->
         <div class="grid gap-2">
-          <Label for="password">Student number</Label>
+          <Label for="student_number">Student number</Label>
           <Input
-            id="student_number"
-            v-model="student_number"
-            placeholder="Enter your student number"
-            type="number"
-            auto-capitalize="none"
-            auto-complete="off"
-            :disabled="isLoading"
+              id="student_number"
+              v-model="student_number"
+              placeholder="Enter your student number"
+              type="number"
+              auto-capitalize="none"
+              auto-complete="off"
+              :disabled="isLoading"
           />
         </div>
 
@@ -129,7 +163,7 @@ async function onSubmit(event: Event) {
         </div>
 
         <!-- Submit Button -->
-        <Button :disabled="isLoading" class="flex items-center gap-2">
+        <Button :disabled="!canSubmit" class="flex items-center gap-2">
           <Loader2 v-if="isLoading" class="h-4 w-4 animate-spin" />
           Sign Up with Email
         </Button>

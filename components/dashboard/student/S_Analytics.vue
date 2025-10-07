@@ -113,7 +113,7 @@ function renderLeaderboardChart() {
     type: 'bar', // we'll flip to horizontal in options
     data: {
       labels: leaderboard.value.map(
-        (s: any) => `${s.full_name} (#${s.global_rank})`
+          (s: any) => `${s.full_name} (#${s.global_rank})`
       ),
       datasets: [
         {

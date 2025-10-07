@@ -325,7 +325,7 @@ function loadCurrentQuestionIntoEditor() {
         </div>
       </div>
 
-        <!-- Code editor -->
+      <!-- Code editor -->
       <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <CodeXml class="w-5 h-5 text-pink-400" />
@@ -372,5 +372,4 @@ function loadCurrentQuestionIntoEditor() {
 .h-56 { height: 14rem; }
 .h-60 { height: 15rem; }
 </style>
-
 

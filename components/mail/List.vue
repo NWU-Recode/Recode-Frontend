@@ -26,13 +26,13 @@ function getBadgeVariantFromLabel(label: string) {
     <div class="flex flex-1 flex-col gap-2 p-4 pt-0">
       <TransitionGroup name="list" appear>
         <button
-          v-for="item of items"
-          :key="item.id"
-          :class="cn(
+            v-for="item of items"
+            :key="item.id"
+            :class="cn(
             'flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent',
             selectedMail === item.id && 'bg-muted',
           )"
-          @click="selectedMail = item.id"
+            @click="selectedMail = item.id"
         >
           <div class="w-full flex flex-col gap-1">
             <div class="flex items-center">
@@ -43,7 +43,7 @@ function getBadgeVariantFromLabel(label: string) {
                 <span v-if="!item.read" class="h-2 w-2 flex rounded-full bg-blue-400" />
               </div>
               <div
-                :class="cn(
+                  :class="cn(
                   'ml-auto text-xs',
                   selectedMail === item.id
                     ? 'text-foreground'
