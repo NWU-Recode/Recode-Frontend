@@ -137,12 +137,16 @@ async function fetchTestcases(challengeId: string, questionId: string) {
     const data = await apiFetch(`/submissions/challenges/${challengeId}/questions/${questionId}/bundle`)
     testcases.value = data.tests?.map((t: any) => ({
       input: t.input,
-      expected: t.expected_output,
+      expected: t.expected,
     })) || []
   } catch (err) {
     console.error('Failed to fetch testcases:', err)
     testcases.value = []
   }
+}
+
+function formatInput(value) {
+  return value ? value.trim().split('\n') : []
 }
 
 
@@ -335,28 +339,60 @@ function loadCurrentQuestionIntoEditor() {
       </div>
 
       <!-- Testcases -->
-      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
+      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px] max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
           <Brain class="w-5 h-5 text-pink-400" />
           <span>Testcases</span>
         </div>
+
         <div class="flex-1 overflow-auto">
           <div v-if="selectedChallengeId && cards.length > 0">
-            <div v-if="testcases.length > 0">
+            <div v-if="testcases.length > 0" class="space-y-2">
               <div
                   v-for="(tc, idx) in testcases"
                   :key="idx"
-                  class="mb-2 p-2 border rounded bg-neutral-50 dark:bg-neutral-800"
+                  class="p-2 border rounded-md"
               >
-                <p class="text-sm text-neutral-700 dark:text-neutral-200"><strong>Input:</strong> <span class="whitespace-pre-wrap">{{ tc.input }}</span></p>
-                <p class="text-sm text-neutral-700 dark:text-neutral-200"><strong>Expected:</strong> <span class="whitespace-pre-wrap">{{ tc.expected }}</span></p>
+                <!-- Two-column layout -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                  <!-- Input -->
+                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                    <span class="font-bold">Input:</span>
+                    <div class="ml-2 mt-1 space-y-0.5">
+                      <div
+                          v-for="(line, i) in formatInput(tc.input)"
+                          :key="'in-' + i"
+                          class="font-mono"
+                      >
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Expected -->
+                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                    <span class="font-bold">Expected:</span>
+                    <div class="ml-2 mt-1 space-y-0.5">
+                      <div
+                          v-for="(line, i) in formatInput(tc.expected)"
+                          :key="'ex-' + i"
+                          class="font-mono"
+                      >
+                        {{ line }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div v-else class="text-neutral-500">
+
+            <div v-else class="text-neutral-500 text-sm">
               No testcases available for this question.
             </div>
           </div>
-          <div v-else class="text-neutral-500">
+
+          <div v-else class="text-neutral-500 text-sm">
             Select a challenge to view its testcases.
           </div>
         </div>
