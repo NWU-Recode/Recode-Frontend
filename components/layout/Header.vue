@@ -2,58 +2,58 @@
 import { ref, onMounted, watch } from 'vue'
 import { Bell, RefreshCw } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
+import { useApiFetch } from '@/composables/useApiFetch'
 
+const { apiFetch } = useApiFetch()
 const route = useRoute()
 
+// Breadcrumbs
 function setLinks() {
-  if (route.fullPath === '/') {
-    return [{ title: 'Home', href: '/' }]
-  }
+  if (route.fullPath === '/') return [{ title: 'Home', href: '/' }]
 
   const segments = route.fullPath.split('/').filter(item => item !== '')
-
   const breadcrumbs = segments.map((item, index) => {
-    const str = item.replace(/-/g, ' ')
-    const title = str
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ')
-
-    return {
-      title,
-      href: `/${segments.slice(0, index + 1).join('/')}`,
-    }
+    const title = item.replace(/-/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+    return { title, href: `/${segments.slice(0, index + 1).join('/')}` }
   })
-
-  return [ ...breadcrumbs]
+  return [...breadcrumbs]
 }
 
-const links = ref<{
-  title: string
-  href: string
-}[]>(setLinks())
-
-watch(() => route.fullPath, (val) => {
-  if (val) {
-    links.value = setLinks()
-  }
-})
+const links = ref(setLinks())
+watch(() => route.fullPath, () => links.value = setLinks())
 
 // Notifications
-const notifications = ref<any[]>([])
+interface Notification {
+  id: string
+  user_id: number
+  title: string
+  message: string
+  type: string
+  priority: number
+  link_url: string
+  expires_at: string
+  created_at: string
+  read: boolean
+}
+
+const notifications = ref<Notification[]>([])
 const unreadCount = ref(0)
 const showDropdown = ref(false)
 const isRefreshing = ref(false)
-const userId = 1 // Replace with actual user ID
 
-async function fetchNotifications() {
+async function fetchNotifications(onlyUnread = true, limit = 100) {
   try {
     isRefreshing.value = true
-    const res = await fetch(`/api/notifications?user_id=${userId}&read=false`)
-    if (res.ok) {
-      notifications.value = await res.json()
-      unreadCount.value = notifications.value.length
-    }
+    const params = new URLSearchParams()
+    if (onlyUnread) params.append('only_unread', 'true')
+    params.append('limit', String(limit))
+
+    const data = await apiFetch(`/notifications/me?${params.toString()}`)
+    notifications.value = data || []
+    unreadCount.value = notifications.value.length
   } catch (err) {
     console.error('Error fetching notifications:', err)
   } finally {
@@ -61,21 +61,29 @@ async function fetchNotifications() {
   }
 }
 
-async function markAsRead(id: number) {
+async function markAsRead(notificationId: string) {
   try {
-    await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' })
-    notifications.value = notifications.value.filter(n => n.id !== id)
+    await apiFetch(`/notifications/${notificationId}/read`, { method: 'PATCH' })
+    notifications.value = notifications.value.filter(n => n.id !== notificationId)
     unreadCount.value = notifications.value.length
   } catch (err) {
     console.error('Error marking notification as read:', err)
   }
 }
 
+async function deleteNotification(notificationId: string) {
+  try {
+    await apiFetch(`/notifications/${notificationId}`, { method: 'DELETE' })
+    notifications.value = notifications.value.filter(n => n.id !== notificationId)
+    unreadCount.value = notifications.value.length
+  } catch (err) {
+    console.error('Error deleting notification:', err)
+  }
+}
+
 function toggleDropdown() {
   showDropdown.value = !showDropdown.value
-  if (showDropdown.value) {
-    fetchNotifications()
-  }
+  if (showDropdown.value) fetchNotifications()
 }
 
 onMounted(() => {
@@ -126,10 +134,10 @@ onMounted(() => {
           <li
               v-for="n in notifications"
               :key="n.id"
-              @click="markAsRead(n.id)"
-              class="px-4 py-2 hover:bg-purple-400 cursor-pointer border-b last:border-b-0"
+              class="px-4 py-2 hover:bg-purple-400 cursor-pointer border-b last:border-b-0 flex justify-between items-center"
           >
-            {{ n.message }}
+            <span @click="markAsRead(n.id)">{{ n.message }}</span>
+            <button class="text-red-500 text-xs" @click.prevent="deleteNotification(n.id)">Delete</button>
           </li>
         </ul>
       </div>
