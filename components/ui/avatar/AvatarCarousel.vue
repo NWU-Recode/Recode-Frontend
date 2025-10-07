@@ -126,10 +126,18 @@ const centerAvatarSrc = computed(() => selectedAvatar.value ?? props.profile.ava
         <!-- Custom navigation buttons -->
         <template #addons>
           <div class="absolute top-1/2 -left-2 -translate-y-1/2 z-20">
-            <button @click="prevAvatar" class="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-full shadow">‹</button>
+            <button
+                type="button"
+                @click="prevAvatar"
+                class="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-full shadow"
+            >‹</button>
           </div>
           <div class="absolute top-1/2 -right-2 -translate-y-1/2 z-20">
-            <button @click="nextAvatar" class="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-full shadow">›</button>
+            <button
+                type="button"
+                @click="nextAvatar"
+                class="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-full shadow"
+            >›</button>
           </div>
         </template>
       </Carousel>
