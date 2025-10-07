@@ -14,9 +14,7 @@ function setPageLoading(val) {
   if (!val) {
     const elapsed = Date.now() - loaderStart
     const remaining = Math.max(0, MIN_LOADER_TIME - elapsed)
-    setTimeout(() => {
-      pageLoading.value = false
-    }, remaining)
+    setTimeout(() => (pageLoading.value = false), remaining)
   } else {
     pageLoading.value = true
   }
@@ -32,6 +30,24 @@ onMounted(async () => {
     setPageLoading(false)
   }
 })
+
+// Handle updated profile from child
+async function handleProfileUpdated(updatedProfile) {
+  setPageLoading(true)
+  try {
+    const saved = await apiFetch('/profiles/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: updatedProfile,
+    })
+    profile.value = saved
+  } catch (e) {
+    console.error('Failed to update profile:', e)
+  } finally {
+    setPageLoading(false)
+  }
+}
+
 </script>
 
 <template>
@@ -41,27 +57,13 @@ onMounted(async () => {
         <FunLoader v-if="pageLoading" />
       </transition>
 
-      <div v-if="!pageLoading && profile">
+      <div v-if="!pageLoading">
         <SettingsProfileForm
             :profile="profile"
             :setPageLoading="setPageLoading"
+            @profile-updated="handleProfileUpdated"
         />
       </div>
     </div>
   </SettingsLayout>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.6s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.fade-enter-to,
-.fade-leave-from {
-  opacity: 1;
-}
-</style>

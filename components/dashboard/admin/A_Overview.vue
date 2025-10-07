@@ -93,9 +93,9 @@ onMounted(async () => {
         <Button @click="openModuleModal">Add Module</Button>
       </div>
 
-      <p class="text-sm text-gray-600 mb-2">
+      <p class="text-sm text-neutral-500 mb-2">
         {{ semester.start_date }} → {{ semester.end_date }}
-        <span v-if="semester.is_current" class="ml-2 text-green-600 font-medium">(Current)</span>
+        <span v-if="semester.is_current" class="ml-2 text-blue-400 font-medium">(Current)</span>
       </p>
     </div>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import * as monaco from 'monaco-editor'
-import { ChevronLeft, ChevronRight, Send, BookOpenText, CodeXml, CircleCheck } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Send, BookOpenText, CodeXml, Brain } from 'lucide-vue-next'
 import { Card, CardContent } from '~/components/ui/card'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '~/components/ui/dropdown-menu'
 import { Button } from '~/components/ui/button'
@@ -17,7 +17,6 @@ const { apiFetch } = useApiFetch()
 
 // --- User info ---
 const lecturer = ref<{ full_name: string }>({ full_name: '' })
-
 
 // --- Modules & Challenges ---
 const modules = ref<any[]>([])
@@ -131,6 +130,22 @@ async function fetchQuestionsForChallenge(challengeId: string) {
   }
 }
 
+const testcases = ref<{ input: string; expected: string }[]>([])
+
+async function fetchTestcases(challengeId: string, questionId: string) {
+  try {
+    const data = await apiFetch(`/submissions/challenges/${challengeId}/questions/${questionId}/bundle`)
+    testcases.value = data.tests?.map((t: any) => ({
+      input: t.input,
+      expected: t.expected_output,
+    })) || []
+  } catch (err) {
+    console.error('Failed to fetch testcases:', err)
+    testcases.value = []
+  }
+}
+
+
 // --- Monaco editor init ---
 onMounted(() => {
   fetchLecturer()
@@ -173,9 +188,14 @@ function prevQuestion() {
 
 // --- Load code into Monaco ---
 function loadCurrentQuestionIntoEditor() {
-  if (!editor || !currentQuestion.value) return
+  if (!editor || !currentQuestion.value || !selectedChallengeId.value) return
+
+  // Load starter code
   const code = currentQuestion.value.starter_code || ''
   editor.setValue(code)
+
+  // Fetch testcases for this question
+  fetchTestcases(selectedChallengeId.value, currentQuestion.value.id)
 }
 </script>
 
@@ -197,7 +217,7 @@ function loadCurrentQuestionIntoEditor() {
           <div class="flex flex-col sm:flex-row sm:items-start justify-between mr-2">
             <div class="flex flex-col">
               <span class="text-sm">{{ card.module_code }}</span>
-              <span v-if="card.week_number != null" class="text-xs text-gray-500">
+              <span v-if="card.week_number != null" class="text-xs text-neutral-500">
                 Week: {{ card.week_number }}
               </span>
             </div>
@@ -239,7 +259,7 @@ function loadCurrentQuestionIntoEditor() {
           >
             <div class="flex flex-col">
               <span class="font-semibold">{{ challenge.title }}</span>
-              <span class="text-xs text-gray-500">{{ challenge.module_code }}</span>
+              <span class="text-xs text-neutral-500">{{ challenge.module_code }}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -280,7 +300,7 @@ function loadCurrentQuestionIntoEditor() {
       <!-- Description -->
       <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px] max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          <BookOpenText class="w-5 h-5 text-pink-600" />
+          <BookOpenText class="w-5 h-5 text-pink-400" />
           <span>Description</span>
         </div>
 
@@ -293,13 +313,13 @@ function loadCurrentQuestionIntoEditor() {
             </template>
 
             <template v-else>
-              <p class="text-gray-500 dark:text-gray-400">
+              <p class="text-neutral-500">
                 No challenge data yet.
               </p>
             </template>
           </div>
 
-          <div v-else class="text-gray-500 dark:text-gray-400">
+          <div v-else class="text-neutral-500">
             Please select a challenge to view details.
           </div>
         </div>
@@ -308,7 +328,7 @@ function loadCurrentQuestionIntoEditor() {
         <!-- Code editor -->
       <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          <CodeXml class="w-5 h-5 text-pink-600" />
+          <CodeXml class="w-5 h-5 text-pink-400" />
           <span>Code</span>
         </div>
         <div ref="editorContainer" class="flex-1 overflow-auto rounded-md"></div>
@@ -317,16 +337,26 @@ function loadCurrentQuestionIntoEditor() {
       <!-- Testcases -->
       <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow min-h-[200px]  max-h-[400px]">
         <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          <CircleCheck class="w-5 h-5 text-pink-600" />
+          <Brain class="w-5 h-5 text-pink-400" />
           <span>Testcases</span>
         </div>
         <div class="flex-1 overflow-auto">
           <div v-if="selectedChallengeId && cards.length > 0">
-            <p class="text-neutral-700 dark:text-neutral-200">
-              Testcases for this challenge will be displayed here.
-            </p>
+            <div v-if="testcases.length > 0">
+              <div
+                  v-for="(tc, idx) in testcases"
+                  :key="idx"
+                  class="mb-2 p-2 border rounded bg-neutral-50 dark:bg-neutral-800"
+              >
+                <p class="text-sm text-neutral-700 dark:text-neutral-200"><strong>Input:</strong> <span class="whitespace-pre-wrap">{{ tc.input }}</span></p>
+                <p class="text-sm text-neutral-700 dark:text-neutral-200"><strong>Expected:</strong> <span class="whitespace-pre-wrap">{{ tc.expected }}</span></p>
+              </div>
+            </div>
+            <div v-else class="text-neutral-500">
+              No testcases available for this question.
+            </div>
           </div>
-          <div v-else class="text-gray-500 dark:text-gray-400">
+          <div v-else class="text-neutral-500">
             Select a challenge to view its testcases.
           </div>
         </div>

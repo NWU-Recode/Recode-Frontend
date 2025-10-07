@@ -44,7 +44,7 @@ const __options = computed(() => {
           :class="[
             option.selected
               ? 'bg-purple-200 text-purple-600 font-semibold'
-              : 'text-neutral-700 dark:text-neutral-200 hover:text-purple-600 hover:bg-transparent',
+              : 'text-neutral-700 dark:text-neutral-200 hover:text-purple-400 hover:bg-transparent',
           ]"
           @click="clickOption(option.value)"
         >

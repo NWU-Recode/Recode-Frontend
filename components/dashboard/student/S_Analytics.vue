@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { Chart, registerables } from 'chart.js'
 import { Card, CardContent } from "~/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~/components/ui/table";
 import { useApiFetch } from '@/composables/useApiFetch'
@@ -11,6 +12,9 @@ import goldIcon from '~/assets/flat-icons/gold.png'
 import rubyIcon from '~/assets/flat-icons/ruby.png'
 import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
+
+// register Chart.js components
+Chart.register(...registerables)
 
 const { apiFetch } = useApiFetch()
 
@@ -36,6 +40,7 @@ const badges = ref<Record<string, number>>({
 
 // Leaderboard data
 const leaderboard = ref<any[]>([])
+let leaderboardChart: Chart | null = null
 
 // Fetch badges for current student
 // --- Fetch badges for the logged-in student ---
@@ -96,6 +101,59 @@ const fetchProfile = async () => {
   }
 }
 
+// --- Render Chart.js horizontal bar ---
+function renderLeaderboardChart() {
+  const ctx = document.getElementById('leaderboardChart') as HTMLCanvasElement
+  if (!ctx) return
+
+  // destroy previous instance to avoid duplicates
+  if (leaderboardChart) leaderboardChart.destroy()
+
+  leaderboardChart = new Chart(ctx, {
+    type: 'bar', // we'll flip to horizontal in options
+    data: {
+      labels: leaderboard.value.map(
+        (s: any) => `${s.full_name} (#${s.global_rank})`
+      ),
+      datasets: [
+        {
+          label: 'Current ELO',
+          data: leaderboard.value.map((s: any) => s.current_elo),
+          backgroundColor: 'rgba(54, 162, 235, 0.7)',
+          borderColor: 'rgb(115,126,138)',
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y', // horizontal bars
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Global Leaderboard (ELO)',
+          font: { size: 16 },
+        },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          title: { display: true, text: 'Current ELO' },
+        },
+        y: {
+          ticks: { autoSkip: false },
+        },
+      },
+    },
+  })
+}
+
+// re-render chart whenever leaderboard updates
+watch(leaderboard, () => {
+  nextTick(() => renderLeaderboardChart())
+})
+
 onMounted(() => {
   fetchBadges()
   fetchLeaderboard()
@@ -129,9 +187,9 @@ watch(podium, () => {
 
 <template>
   <!-- Graph placeholder -->
-  <div class="mt-8 h-72 sm:h-80 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow">
+  <div class="mt-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow">
     <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-      <span>Space for graphs</span>
+      <canvas id="leaderboardChart"></canvas>
     </div>
   </div>
 
