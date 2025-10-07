@@ -138,8 +138,13 @@ async function fetchChallengeProgress(moduleCode: string) {
   if (!token.value) return
 
   try {
-    const res = await apiFetch('/challenge/progress')
-    challengeProgressData.value = res
+    // Fetch all challenges and filter those belonging to the selected module
+    const res = await apiFetch('/challenge/progress', {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    const filtered = res.filter((c: any) => c.module_code === moduleCode)
+
+    challengeProgressData.value = filtered
     renderChallengeChart()
   } catch (err) {
     console.error('Failed to fetch challenge progress:', err)
@@ -185,12 +190,17 @@ function renderChallengeChart() {
 
   if (challengeChart) challengeChart.destroy()
 
+  // If there are no challenges for this module, show placeholder text
+  if (challengeProgressData.value.length === 0) {
+    const parent = ctx.parentElement
+    if (parent) parent.innerHTML = '<p class="text-gray-500 text-center p-4">No challenges available for this module</p>'
+    return
+  }
+
   challengeChart = new Chart(ctx, {
     type: 'pie',
     data: {
-      labels: challengeProgressData.value.map(
-        (c: any) => c.challenge_name
-      ),
+      labels: challengeProgressData.value.map((c: any) => c.challenge_name),
       datasets: [
         {
           label: 'Students Completed',
@@ -211,12 +221,17 @@ function renderChallengeChart() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom' },
+        legend: { display: false },
         title: {
           display: true,
-          text: 'Challenge Completion Overview',
+          text: 'Global Leaderboard (ELO)',
         },
+      },
+      scales: {
+        x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
+        y: { beginAtZero: true, title: { display: true, text: 'Current ELO' } },
       },
     },
   })
@@ -287,21 +302,26 @@ onMounted(async () => {
     </div>
 
     <!-- Graph placeholder -->
-    <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex items-center justify-center shadow">
-      <div class="space-y-10 px-4 sm:px-6 lg:px-8">
+    <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 shadow">
+      <div class="space-y-10">
 
         <!-- Leaderboard Chart -->
         <div class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow">
-          <canvas id="leaderboardChart"></canvas>
+          <div class="relative w-full" style="aspect-ratio: 16 / 9;">
+            <canvas id="leaderboardChart" class="w-full h-full"></canvas>
+          </div>
         </div>
 
         <!-- Challenge Completion Chart -->
         <div class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow">
-          <canvas id="challengeChart"></canvas>
+          <div class="relative w-full" style="aspect-ratio: 16 / 9;">
+            <canvas id="challengeChart" class="w-full h-full"></canvas>
+          </div>
         </div>
-        
+
       </div>
     </div>
+
 
     <!-- Students Table -->
     <div class="w-full max-w-[370px] sm:max-w-full overflow-x-auto rounded-lg shadow">
