@@ -45,8 +45,8 @@ const formValues = reactive<ProfileFormValues>({
 
 // --- Avatar setup ---
 const avatarOptions = Array.from({ length: 18 }, (_, i) => `/avatars/avatar${i + 1}.jpeg`)
-const selectedAvatar = ref<string>(props.profile.avatar_url ?? avatarOptions[0])
-const avatarPreview = ref<string>(selectedAvatar.value)
+const selectedAvatar = ref<string | null>(props.profile.avatar_url ?? avatarOptions[0])
+const avatarPreview = ref(selectedAvatar.value)
 
 watch(selectedAvatar, (url) => {
   avatarPreview.value = url
@@ -151,7 +151,7 @@ function handleReset() {
     <!-- Avatar + Name -->
     <Card class="p-4 md:p-6 flex flex-col items-center gap-4 md:gap-6">
       <div class="flex justify-center w-full pb-8">
-        <AvatarCarousel v-model:selected="selectedAvatar" :profile="props.profile" />
+        <AvatarCarousel v-model="selectedAvatar" :profile="props.profile" />
       </div>
 
       <div class="flex flex-col w-full gap-4 md:flex-row md:gap-6">

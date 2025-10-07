@@ -12,7 +12,8 @@ import {
   NotebookPen,
   CodeXml,
   CircleCheck,
-  XCircle
+  XCircle,
+  Brain
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
@@ -493,7 +494,7 @@ function onMouseUp() {
                  showDescription ? 'bg-neutral-200 dark:bg-neutral-800' : '',
                  'text-neutral-800 dark:text-neutral-100']"
             >
-              <BookOpenText class="w-5 h-5 text-pink-600" />
+              <BookOpenText class="w-5 h-5 text-pink-400" />
               Description
             </button>
 
@@ -503,7 +504,7 @@ function onMouseUp() {
                  showNotes ? 'bg-neutral-200 dark:bg-neutral-800' : '',
                  'text-neutral-800 dark:text-neutral-100']"
             >
-              <NotebookPen class="w-5 h-5 text-pink-600" />
+              <NotebookPen class="w-5 h-5 text-pink-400" />
               Notes
             </button>
           </div>
@@ -579,7 +580,7 @@ function onMouseUp() {
           <div :style="{ height: section2Height + '%' }" class="p-1 flex flex-col">
             <div class="flex items-center justify-between mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
               <div class="flex items-center gap-2">
-                <CodeXml class="w-5 h-5 text-pink-600" />
+                <CodeXml class="w-5 h-5 text-pink-400" />
                 <span>Code</span>
               </div>
               <span class="px-3 py-1 rounded-md bg-neutral-200 dark:bg-neutral-700 text-sm font-medium">
@@ -598,7 +599,7 @@ function onMouseUp() {
           <!-- Section 3: Testcases / Output -->
           <div :style="{ height: section3Height + '%' }" class="p-1 flex flex-col">
             <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-              <CircleCheck class="w-5 h-5 text-pink-600" />
+              <Brain class="w-5 h-5 text-pink-400" />
               <span>Output</span>
             </div>
 

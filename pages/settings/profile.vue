@@ -38,7 +38,7 @@ async function handleProfileUpdated(updatedProfile) {
     const saved = await apiFetch('/profiles/me', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedProfile),
+      body: updatedProfile,
     })
     profile.value = saved
   } catch (e) {
