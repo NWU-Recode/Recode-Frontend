@@ -17,6 +17,8 @@ Chart.register(...registerables)
 const { apiFetch } = useApiFetch()
 const { user, isAuthenticated, fetchUser } = useAuth()
 const token = ref<string | null>(null)
+const activeTab = ref<'Leaderboard' | 'Challenge Progress'>('Leaderboard')
+const tabs = ['Leaderboard', 'Challenge Progress'] as const
 
 async function initAuth() {
   if (!isAuthenticated.value) {
@@ -31,9 +33,13 @@ await initAuth()
 const leaderboardData = ref<any[]>([])
 let leaderboardChart: Chart | null = null
 
-async function fetchLeaderboard() {
+async function fetchLeaderboard(moduleCode?: string) {
   try {
-    const res = await apiFetch('/global/leaderboard')
+    const url = moduleCode
+        ? `/global/leaderboard?module_code=${moduleCode}`
+        : '/global/leaderboard'
+
+    const res = await apiFetch(url)
     leaderboardData.value = res
     renderLeaderboardChart()
   } catch (err) {
@@ -89,6 +95,10 @@ function renderLeaderboardChart() {
 // --- Modules ---
 const modules = ref<any[]>([])
 const selectedModuleCode = ref<string | null>(null)
+
+const studentsForSelectedModule = computed(() =>
+    selectedModuleCode.value ? studentsByModule[selectedModuleCode.value] ?? [] : []
+)
 
 // --- Students per module ---
 const studentsByModule = reactive<Record<string, any[]>>({})
@@ -190,23 +200,16 @@ function renderChallengeChart() {
 
   if (challengeChart) challengeChart.destroy()
 
-  // If there are no challenges for this module, show placeholder text
-  if (challengeProgressData.value.length === 0) {
-    const parent = ctx.parentElement
-    if (parent) parent.innerHTML = '<p class="text-gray-500 text-center p-4">No challenges available for this module</p>'
-    return
-  }
+  let data = challengeProgressData.value
 
   challengeChart = new Chart(ctx, {
     type: 'pie',
     data: {
-      labels: challengeProgressData.value.map((c: any) => c.challenge_name),
+      labels: data.map((c: any) => c.challenge_name),
       datasets: [
         {
           label: 'Students Completed',
-          data: challengeProgressData.value.map(
-            (c: any) => c.students_completed
-          ),
+          data: data.map((c: any) => c.students_completed || 0),
           backgroundColor: [
             'rgba(255, 99, 132, 0.7)',
             'rgba(54, 162, 235, 0.7)',
@@ -221,21 +224,48 @@ function renderChallengeChart() {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend: { display: true },
         title: {
           display: true,
-          text: 'Global Leaderboard (ELO)',
+          text:
+              data.every((c: any) => c.students_completed === 0)
+                  ? `No submissions yet for ${selectedModuleCode.value}`
+                  : `Challenge Completion for ${selectedModuleCode.value}`,
         },
-      },
-      scales: {
-        x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
-        y: { beginAtZero: true, title: { display: true, text: 'Current ELO' } },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.parsed
+              return value === 0
+                  ? '0 students completed (yet)'
+                  : `${value} students completed`
+            },
+          },
+        },
       },
     },
   })
 }
+
+
+watch(selectedModuleCode, async (moduleCode) => {
+  if (!moduleCode) return
+  await fetchChallengeProgress(moduleCode)
+  await fetchLeaderboard(moduleCode)
+})
+
+// When changing tab, re-render the chart for the same selected module
+watch(activeTab, async (tab) => {
+  const moduleCode = selectedModuleCode.value
+  if (!moduleCode) return
+
+  if (tab === 'Leaderboard') {
+    await fetchLeaderboard(moduleCode)
+  } else if (tab === 'Challenge Progress') {
+    await fetchChallengeProgress(moduleCode)
+  }
+})
 
 // --- Watch selected module to refresh students ---
 watch(selectedModuleCode, async (val) => {
@@ -246,6 +276,9 @@ watch(selectedModuleCode, async (val) => {
 onMounted(async () => {
   await fetchModules()
   await fetchLeaderboard()
+  if (modules.value.length) {
+    selectedModuleCode.value = modules.value[0].code
+  }
 })
 </script>
 
@@ -303,25 +336,38 @@ onMounted(async () => {
 
     <!-- Graph placeholder -->
     <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 shadow">
-      <div class="space-y-10">
+      <div>
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-300 dark:border-gray-700 mb-4">
+          <button
+              v-for="tab in tabs"
+              :key="tab"
+              @click="activeTab = tab"
+              :class="[
+                'px-4 py-2 font-medium text-sm transition-colors',
+                activeTab === tab
+                  ? 'border-b-2 border-purple-400 text-purple-400'
+                  : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+              ]"
+          >
+              {{ tab }}
+          </button>
+        </div>
 
-        <!-- Leaderboard Chart -->
-        <div class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow">
+        <!-- Chart display -->
+        <div v-if="activeTab === 'Leaderboard'">
           <div class="relative w-full" style="aspect-ratio: 16 / 9;">
             <canvas id="leaderboardChart" class="w-full h-full"></canvas>
           </div>
         </div>
 
-        <!-- Challenge Completion Chart -->
-        <div class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow">
+        <div v-else-if="activeTab === 'Challenge Progress'" class="w-100 h-100">
           <div class="relative w-full" style="aspect-ratio: 16 / 9;">
             <canvas id="challengeChart" class="w-full h-full"></canvas>
           </div>
         </div>
-
       </div>
     </div>
-
 
     <!-- Students Table -->
     <div class="w-full max-w-[370px] sm:max-w-full overflow-x-auto rounded-lg shadow">
@@ -338,7 +384,7 @@ onMounted(async () => {
 
           <TableBody>
             <TableRow
-                v-for="student in studentsByModule[selectedModuleCode] || []"
+                v-for="student in studentsForSelectedModule"
                 :key="student.number"
                 collapsible
             >
