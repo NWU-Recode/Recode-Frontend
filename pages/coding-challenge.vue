@@ -128,6 +128,8 @@ onMounted(() => {
   fetchQuestions()
 })
 
+
+
 // --- Fetch questions ---
 async function fetchQuestions() {
   try {
@@ -478,7 +480,7 @@ function onMouseUp() {
         </div>
 
         <div>
-          <Button variant="link">View slides</Button>
+          <Button variant="link">Download slides</Button>
         </div>
       </div>
 
@@ -561,7 +563,7 @@ function onMouseUp() {
               <div v-else-if="showNotes" class="flex flex-col h-full">
                 <textarea
                     v-model="questionNotes[currentQuestionIndex]"
-                    class="flex-1 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    class="flex-1 w-full min-h-[200px] rounded-md border bg-neutral-100 dark:bg-neutral-900 p-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Write your notes here..."
                 ></textarea>
               </div>
@@ -600,7 +602,7 @@ function onMouseUp() {
           <div :style="{ height: section3Height + '%' }" class="p-1 flex flex-col">
             <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
               <Brain class="w-5 h-5 text-pink-400" />
-              <span>Output</span>
+              <span>Testcases / Output</span>
             </div>
 
             <div class="flex-1 overflow-auto space-y-2">
@@ -613,44 +615,50 @@ function onMouseUp() {
               </div>
 
               <!-- Testcases -->
-              <div v-else-if="currentQuestion?.testcases?.length">
+              <div v-else-if="currentQuestion?.testcases?.length" class="space-y-2">
                 <div v-for="(tc, idx) in currentQuestion.testcases" :key="idx" class="p-2 border rounded-md">
                   <!-- Pass/Fail Icon -->
-                  <div class="flex items-center gap-2 mb-1 ">
-                    <component
-                        v-if="tc.passed !== undefined"
-                        :is="tc.passed ? CircleCheck : XCircle"
-                        :class="tc.passed ? 'text-green-500 w-5 h-5' : 'text-red-500 w-5 h-5'"
-                    />
-                    <span class="font-semibold text-sm">Test Case {{ idx + 1 }}</span>
-                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <div class="flex items-center gap-2 mb-1 ">
+                        <component
+                            v-if="tc.passed !== undefined"
+                            :is="tc.passed ? CircleCheck : XCircle"
+                            :class="tc.passed ? 'text-green-500 w-5 h-5' : 'text-red-500 w-5 h-5'"
+                        />
+                        <span class="font-semibold text-sm">Test Case {{ idx + 1 }}</span>
+                      </div>
 
-                  <!-- Input -->
-                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                    <span class="font-semibold">Input:</span>
-                    <div class="ml-2 mt-1 space-y-0.5">
-                      <div v-for="(line, i) in formatInput(tc.input)" :key="i" class="font-mono">
-                        {{ line }}
+                      <!-- Input -->
+                      <div class="text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+                        <span class="font-bold">Input:</span>
+                        <div class="ml-2 mt-1 space-y-0.5">
+                          <div v-for="(line, i) in formatInput(tc.input)" :key="i" class="font-mono">
+                            {{ line }}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Expected -->
-                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                    <span class="font-semibold">Expected:</span>
-                    <div class="ml-2 mt-1 space-y-0.5">
-                      <div v-for="(line, i) in formatInput(tc.expected)" :key="i" class="font-mono">
-                        {{ line }}
+                    <div class="mt-4">
+                      <!-- Expected -->
+                      <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                        <span class="font-bold">Expected:</span>
+                        <div class="ml-2 mt-1 space-y-0.5">
+                          <div v-for="(line, i) in formatInput(tc.expected)" :key="i" class="font-mono">
+                            {{ line }}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <!-- Got -->
-                  <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                    <span class="font-semibold">Your output:</span>
-                    <div class="ml-2 mt-1 space-y-0.5">
-                      <div v-for="(line, i) in formatInput(tc.got)" :key="i" class="font-mono">
-                        {{ line }}
+                      <!-- Got -->
+                      <div class="text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+                        <span class="font-bold">Your output:</span>
+                        <div class="ml-2 mt-1 space-y-0.5">
+                          <div v-for="(line, i) in formatInput(tc.got)" :key="i" class="font-mono">
+                            {{ line }}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
