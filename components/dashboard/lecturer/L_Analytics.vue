@@ -218,7 +218,7 @@ function renderChallengeChart() {
             'rgba(153, 102, 255, 0.7)',
             'rgba(255, 159, 64, 0.7)',
           ],
-          borderWidth: 1,
+          borderWidth: 0,
         },
       ],
     },
@@ -303,7 +303,7 @@ onMounted(async () => {
           >
             <div class="flex flex-col">
               <span class="font-semibold">{{ mod.name }}</span>
-              <span class="text-xs text-gray-500">{{ mod.code }}</span>
+              <span class="text-xs text-neutral-500">{{ mod.code }}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -338,7 +338,7 @@ onMounted(async () => {
     <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 shadow">
       <div>
         <!-- Tabs -->
-        <div class="flex border-b border-gray-300 dark:border-gray-700 mb-4">
+        <div class="flex border-b border-neutral-300 dark:border-neutral-700 mb-4">
           <button
               v-for="tab in tabs"
               :key="tab"
@@ -347,7 +347,7 @@ onMounted(async () => {
                 'px-4 py-2 font-medium text-sm transition-colors',
                 activeTab === tab
                   ? 'border-b-2 border-purple-400 text-purple-400'
-                  : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+                  : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
               ]"
           >
               {{ tab }}
@@ -415,7 +415,7 @@ onMounted(async () => {
                         />
                       </template>
                       <template v-else>
-                        <span class="text-gray-400 italic">None</span>
+                        <span class="text-neutral-500 italic">None</span>
                       </template>
                     </TableCell>
                   </template>
