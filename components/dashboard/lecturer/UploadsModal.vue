@@ -37,7 +37,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 
 // Modules fetched from API
-const modules = ref<string[]>([]);
+const modules = ref<{ code: string; name: string }[]>([]);
 
 async function initAuth() {
   if (!isAuthenticated.value) {
@@ -57,8 +57,11 @@ async function fetchModules() {
     const res = await apiFetch("/admin/", {
       headers: { Authorization: `Bearer ${token.value}` },
     });
-    // Assume res is an array of objects with `code` property
-    modules.value = res.map((m: any) => m.code);
+
+    // Ensure only needed properties are stored
+    modules.value = Array.isArray(res)
+        ? res.map((m: any) => ({ code: m.code, name: m.name }))
+        : [];
   } catch (err) {
     console.error("Failed to fetch modules", err);
   }
@@ -75,7 +78,7 @@ function onFileSelect(e: Event) {
   for (const f of Array.from(target.files)) {
     files.push({
       file: f,
-      subject: modules.value[0] || "",
+      subject: modules.value[0]?.code || "", // Default to first module code
       title: f.name.replace(/\.[^/.]+$/, ""),
       topic: "",
       schedule: false,
@@ -169,7 +172,6 @@ async function uploadAll() {
 }
 </script>
 
-
 <template>
   <div class="flex flex-col h-[80vh]">
     <!-- Sticky file selection -->
@@ -205,21 +207,21 @@ async function uploadAll() {
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2">
           <!-- Subject Dropdown -->
           <div class="flex-1">
-            <Label>Subject</Label>
+            <Label>Module</Label>
             <DropdownMenu>
               <DropdownMenuTrigger
                   class="w-full px-2 py-1 border rounded-md shadow-sm cursor-pointer flex items-center justify-between"
               >
-                {{ f.subject || "Select a subject" }}
+                {{ f.subject || "Select a module" }}
               </DropdownMenuTrigger>
 
               <DropdownMenuContent class="w-full">
                 <DropdownMenuItem
-                    v-for="subj in subjects"
-                    :key="subj"
-                    @click="f.subject = subj"
+                    v-for="mod in modules"
+                    :key="mod.code"
+                    @click="f.subject = mod.code"
                 >
-                  {{ subj }}
+                  {{ mod.code }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -240,7 +242,7 @@ async function uploadAll() {
       </div>
     </div>
 
-    <!-- Buttons at bottom (outside scrollable section) -->
+    <!-- Buttons -->
     <div class="flex flex-col sm:flex-row gap-2 mt-2 bg-background p-2 sm:p-0">
       <Button variant="link" @click="clearAll" class="w-full sm:w-auto">Clear</Button>
       <Button variant="outline" @click="onCancel" class="w-full sm:w-auto">Cancel</Button>
@@ -250,4 +252,3 @@ async function uploadAll() {
     </div>
   </div>
 </template>
-
