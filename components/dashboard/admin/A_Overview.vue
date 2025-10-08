@@ -77,7 +77,7 @@ onMounted(async () => {
     <div class="flex justify-between mb-4">
       <h1 class="text-xl font-bold">Admin Dashboard</h1>
       <Button
-          <!--:disabled="!!semester"-->
+          :disabled="!!semester"
           @click="showSemesterModal = true"
       >
         Add Semester
