@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useParallax } from '@vueuse/core'
+import Brain3D from "~/components/Brain3D.vue";
 
 defineProps<{
   reverse?: boolean
@@ -14,7 +15,7 @@ const { tilt, roll } = useParallax(container)
 <template>
   <div
       ref="container"
-      class="relative flex flex-col items-center justify-center p-16 h-dvh lg:max-w-none lg:flex-row lg:px-0"
+      class="relative flex flex-col items-center justify-center h-dvh lg:max-w-none lg:flex-row lg:px-0"
       :class="{ 'lg:flex-row-reverse': reverse }"
   >
     <!-- Logo / Image with parallax -->
@@ -24,11 +25,7 @@ const { tilt, roll } = useParallax(container)
           transform: `translate3d(${tilt * 50}px, ${roll * 50}px, 0)`
         }"
     >
-      <img
-          class="h-48 w-48 lg:h-[600px] lg:w-[600px] md:h-[400px] md:w-[400px] sm:h-72 sm:w-72 scale-125"
-          src="/logo.svg"
-          alt="Logo"
-      >
+      <Brain3D :tilt="tilt * 0.5" :roll="roll * 0.5" class="h-48 w-48 lg:h-[600px] lg:w-[600px]" />
     </div>
 
     <!-- Form / Slot -->
