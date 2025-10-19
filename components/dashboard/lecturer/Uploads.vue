@@ -9,6 +9,9 @@ import { useApiFetch } from "@/composables/useApiFetch";
 import Ruby from '~/assets/flat-icons/ruby.png'
 import Emerald from '~/assets/flat-icons/emerald.png'
 import Diamond from '~/assets/flat-icons/diamond.png'
+import FunLoader from '~/components/FunLoader.vue'
+
+const isLoading = ref(true)
 
 const open = ref(false);
 const modules = ref<any[]>([]); // list of modules
@@ -53,7 +56,9 @@ async function fetchSlides() {
       const res = await apiFetch(`/slides/?module_code=${mod.code}`, {
         headers: { Authorization: `Bearer ${token.value}` },
       });
-      slidesByModule[mod.code] = res;
+
+      // Sort slides by week_number ascending
+      slidesByModule[mod.code] = res.sort((a: any, b: any) => (a.week_number ?? 0) - (b.week_number ?? 0));
     }
   } catch (err) {
     console.error("Failed to fetch slides:", err);
@@ -92,11 +97,10 @@ async function fetchChallenges() {
         headers: { Authorization: `Bearer ${token.value}` },
       });
 
-      // normalize for table
-      challengesByModule[mod.code] = res.map((c: any) => ({
+      // normalize and add tier icon
+      const normalized = res.map((c: any) => ({
         ...c,
-        displayWeek:
-            c.challenge_type === 'weekly' ? c.week_number : c.week_number || null,
+        displayWeek: c.challenge_type === 'weekly' ? c.week_number : null,
         tierIcon:
             c.challenge_type === 'special'
                 ? c.tier === 'ruby'
@@ -108,6 +112,20 @@ async function fetchChallenges() {
                             : null
                 : null,
       }));
+
+      // Sort: weekly by week_number, special by release_date or due_date
+      challengesByModule[mod.code] = normalized.sort((a: any, b: any) => {
+        if (a.challenge_type === 'weekly' && b.challenge_type === 'weekly') {
+          return (a.week_number ?? 0) - (b.week_number ?? 0);
+        } else if (a.challenge_type === 'special' && b.challenge_type === 'special') {
+          const aDate = new Date(a.release_date || a.due_date || 0).getTime();
+          const bDate = new Date(b.release_date || b.due_date || 0).getTime();
+          return aDate - bDate;
+        } else {
+          // mixed types: put weekly first
+          return a.challenge_type === 'weekly' ? -1 : 1;
+        }
+      });
     }
   } catch (err) {
     console.error("Failed to fetch challenges:", err);
@@ -120,12 +138,6 @@ function handleUploaded(file: any) {
   slidesByModule[file.subject].push(file);
   open.value = false;
 }
-
-onMounted(async () => {
-  await fetchModules();
-  await fetchSlides();
-  await fetchChallenges();
-});
 
 // reactive for current week
 const currentWeek = ref<number | null>(null);
@@ -150,18 +162,31 @@ async function fetchCurrentWeek() {
   }
 }
 
-// call after modules are fetched
+async function fetchAllData() {
+  isLoading.value = true
+  try {
+    await fetchModules()
+    await Promise.all([
+      fetchSlides(),
+      fetchChallenges(),
+      fetchCurrentWeek(),
+    ])
+  } catch (err) {
+    console.error('Failed to fetch uploads data:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 onMounted(async () => {
-  await fetchModules();
-  await fetchCurrentWeek();
-  await fetchSlides();
-  await fetchChallenges();
-});
+  await fetchAllData()
+})
 
 </script>
 
 <template>
-  <div class="space-y-10">
+  <FunLoader v-if="isLoading" />
+  <div v-else class="space-y-10">
     <div class="mb-4">
       <h2 class="text-xl font-semibold">
         Current Week: <span v-if="currentWeek">{{ currentWeek }}</span><span v-else>N/A</span>
@@ -280,7 +305,22 @@ onMounted(async () => {
                   </TableCell>
 
                   <!-- Status -->
-                  <TableCell>{{ challenge.status }}</TableCell>
+                  <TableCell>
+                    <div class="flex items-center gap-2">
+                      <span
+                          v-if="challenge.status === 'active'"
+                          class="w-2 h-2 rounded-full bg-green-500 shadow-lg animate-pulse"
+                      >
+                      </span>
+                      <span
+                          v-else
+                          class="w-2 h-2 rounded-full bg-red-500 shadow-lg animate-pulse"
+                      ></span>
+                      <span class="capitalize">
+                        {{ challenge.status === 'active' ? 'Active' : 'Not Active' }}
+                      </span>
+                    </div>
+                  </TableCell>
                 </template>
               </TableRow>
             </template>

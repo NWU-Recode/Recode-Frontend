@@ -20,10 +20,11 @@ function toggle() {
   <!-- Main row -->
   <tr
       :class="cn(
-      'border-b transition-colors duration-200 data-[state=selected]:bg-muted',
-      'hover:bg-[linear-gradient(to_top_right,rgba(96,165,250,0.4),rgba(139,92,246,0.4),rgba(236,72,153,0.4))]',
-      props.class
-    )"
+    'border-b transition-all duration-200 relative',
+    'hover:bg-white/30 dark:hover:bg-white/5 hover:backdrop-blur-sm',
+    'hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]',
+    props.class
+  )"
   >
     <td
         v-if="props.collapsible"
