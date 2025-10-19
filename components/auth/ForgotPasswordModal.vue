@@ -30,7 +30,7 @@ const open = ref(false)
       class="ml-auto inline-block text-sm underline"
       @click="open = true"
     >
-      Forgot your password?
+      Forgot password?
     </button>
   </Dialog>
 </template>

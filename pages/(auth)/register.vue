@@ -5,7 +5,7 @@ definePageMeta({
 </script>
 
 <template>
-  <LayoutAuth>
+  <LayoutAuth class="pb-14">
     <div class="grid mx-auto max-w-sm gap-6">
       <div class="flex flex-col text-center space-y-2">
         <h1 class="text-2xl font-semibold tracking-tight">

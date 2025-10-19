@@ -12,6 +12,9 @@ import goldIcon from '~/assets/flat-icons/gold.png'
 import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import rubyIcon from '~/assets/flat-icons/ruby.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
+import FunLoader from '~/components/FunLoader.vue'
+
+const isLoading = ref(true)
 
 const { apiFetch } = useApiFetch()
 
@@ -32,6 +35,18 @@ const currentQuestionIndex = ref(0)
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor
 const selectedLanguage = 'python'
+
+const currentWeek = ref<number | null>(null)
+
+async function fetchCurrentWeek() {
+  try {
+    const res = await apiFetch('/dashboard/current-week')
+    currentWeek.value = res?.current_week ?? null
+  } catch (err) {
+    console.error('Failed to fetch current week:', err)
+    currentWeek.value = null
+  }
+}
 
 // --- Fetch current lecturer ---
 async function fetchLecturer() {
@@ -57,38 +72,48 @@ async function fetchModules() {
 async function fetchCards() {
   try {
     const res = await apiFetch('/challenge/progress')
-    cards.value = res.map((c: any) => {
-      let icons: string[] = []
-      let percentages: number[] = []
+    const sorted = res
+        .map((c: any) => {
+          let icons: string[] = []
+          let percentages: number[] = []
 
-      if (c.challenge_type.toLowerCase() === 'weekly') {
-        icons = [bronzeIcon, silverIcon, goldIcon]
-        percentages = [
-          c.difficulty_breakdown?.bronze ?? c.challenge_completion_rate,
-          c.difficulty_breakdown?.silver ?? c.challenge_completion_rate,
-          c.difficulty_breakdown?.gold ?? c.challenge_completion_rate,
-        ]
-      } else if (c.challenge_type.toLowerCase() === 'special') {
-        const tierIconMap: Record<string, string> = {
-          emerald: emeraldIcon,
-          ruby: rubyIcon,
-          diamond: diamondIcon,
-        }
-        const tier = c.challenge_tier?.toLowerCase() || 'emerald'
-        icons = [tierIconMap[tier] || emeraldIcon]
-        percentages = [c.challenge_completion_rate]
-      }
+          if (c.challenge_type.toLowerCase() === 'weekly') {
+            icons = [bronzeIcon, silverIcon, goldIcon]
+            percentages = [
+              c.difficulty_breakdown?.bronze ?? c.challenge_completion_rate,
+              c.difficulty_breakdown?.silver ?? c.challenge_completion_rate,
+              c.difficulty_breakdown?.gold ?? c.challenge_completion_rate,
+            ]
+          } else if (c.challenge_type.toLowerCase() === 'special') {
+            const tierIconMap: Record<string, string> = {
+              emerald: emeraldIcon,
+              ruby: rubyIcon,
+              diamond: diamondIcon,
+            }
+            const tier = c.challenge_tier?.toLowerCase() || 'emerald'
+            icons = [tierIconMap[tier] || emeraldIcon]
+            percentages = [c.challenge_completion_rate]
+          }
 
-      return {
-        id: c.challenge_id,
-        topic: c.challenge_name,
-        module_code: c.module_code,
-        icons,
-        percentages,
-        week_number: c.week_number,
-        participation_rate: c.challenge_participation_rate,
-      }
-    })
+          return {
+            id: c.challenge_id,
+            topic: c.challenge_name,
+            module_code: c.module_code,
+            icons,
+            percentages,
+            week_number: c.week_number,
+            participation_rate: c.challenge_participation_rate,
+          }
+        })
+        .sort((a, b) => {
+          // push null or undefined week numbers to the end
+          if (a.week_number == null && b.week_number == null) return 0
+          if (a.week_number == null) return 1
+          if (b.week_number == null) return -1
+          return a.week_number - b.week_number
+        })
+
+    cards.value = sorted
   } catch (err) {
     console.error('Failed to fetch challenge progress:', err)
   }
@@ -96,12 +121,22 @@ async function fetchCards() {
 
 async function fetchChallenges() {
   try {
-    const res = await apiFetch('/challenge/progress') // same as your cards endpoint
-    challengeOptions.value = res.map((c: any) => ({
-      id: c.challenge_id,
-      title: c.challenge_name,
-      module_code: c.module_code,
-    }))
+    const res = await apiFetch('/challenge/progress')
+    const sorted = res
+        .map((c: any) => ({
+          id: c.challenge_id,
+          title: c.challenge_name,
+          module_code: c.module_code,
+          week_number: c.week_number,
+        }))
+        .sort((a, b) => {
+          if (a.week_number == null && b.week_number == null) return 0
+          if (a.week_number == null) return 1
+          if (b.week_number == null) return -1
+          return a.week_number - b.week_number
+        })
+
+    challengeOptions.value = sorted
   } catch (err) {
     console.error('Failed to fetch challenges', err)
   }
@@ -149,13 +184,26 @@ function formatInput(value) {
   return value ? value.trim().split('\n') : []
 }
 
+async function fetchAllData() {
+  isLoading.value = true
+  try {
+    await Promise.all([
+      fetchLecturer(),
+      fetchModules(),
+      fetchChallenges(),
+      fetchCards(),
+      fetchCurrentWeek(),
+    ])
+  } catch (err) {
+    console.error('Failed to fetch overview data:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
 
-// --- Monaco editor init ---
+
 onMounted(() => {
-  fetchLecturer()
-  fetchModules()
-  fetchChallenges()
-  fetchCards()
+  fetchAllData()
 
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
@@ -204,38 +252,58 @@ function loadCurrentQuestionIntoEditor() {
 </script>
 
 <template>
-  <div class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full">
+  <FunLoader v-if="isLoading" />
+  <div v-else class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full">
     <!-- Header -->
-    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400">
-      Welcome, {{ lecturer.full_name }}
-    </h2>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2">
+      <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400">
+        Welcome, {{ lecturer.full_name }}
+      </h2>
+
+      <div class="text-right text-xl sm:text-2xl font-semibold text-neutral-700">
+        Current Week: <span v-if="currentWeek">{{ currentWeek }}</span><span v-else>N/A</span>
+      </div>
+    </div>
 
     <!-- Challenge Progress Cards -->
     <div
         class="grid gap-4 sm:gap-6"
         style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"
     >
-      <Card v-for="card in cards" :key="card.id" class="h-48 sm:h-52 md:h-56 lg:h-60">
-        <CardContent class="h-full flex flex-col justify-center p-4">
+      <Card
+          v-for="card in cards"
+          :key="card.id"
+          class="h-56 sm:h-60 md:h-64 lg:h-68 flex flex-col"
+      >
+        <CardContent class="flex flex-col h-full p-4">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-start justify-between mr-2">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between">
             <div class="flex flex-col">
               <span class="text-sm">{{ card.module_code }}</span>
               <span v-if="card.week_number != null" class="text-xs text-neutral-500">
-                Week: {{ card.week_number }}
-              </span>
+            Week: {{ card.week_number }}
+          </span>
             </div>
-            <span class="text-sm sm:text-base font-semibold text-center mt-2 sm:mt-0">
-              {{ card.topic }}
-            </span>
+            <span
+                class="text-xs sm:text-sm font-semibold text-center mt-2 sm:mt-0 break-words sm:max-w-[50%]"
+            >
+          {{ card.topic }}
+        </span>
           </div>
+
+          <!-- Spacer to push icons to bottom -->
+          <div class="flex-1"></div>
 
           <!-- Icons row -->
           <div
               class="mt-2 flex flex-wrap gap-4"
               :class="card.icons.length === 1 ? 'justify-center' : 'justify-between'"
           >
-            <div v-for="(icon, i) in card.icons" :key="i" class="flex flex-col items-center gap-1">
+            <div
+                v-for="(icon, i) in card.icons"
+                :key="i"
+                class="flex flex-col items-center gap-1"
+            >
               <img :src="icon" class="h-10 w-10" />
               <span class="text-sm font-semibold">{{ card.percentages[i] }}%</span>
             </div>
@@ -254,7 +322,9 @@ function loadCurrentQuestionIntoEditor() {
           {{ selectedChallengeId ? challengeOptions.find(c => c.id === selectedChallengeId)?.title : 'Select challenge' }}
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent class="max-w-xs w-full break-words">
+        <DropdownMenuContent
+            class="max-w-xs w-full break-words max-h-64 overflow-y-auto"
+        >
           <DropdownMenuItem
               v-for="challenge in challengeOptions"
               :key="challenge.id"
@@ -263,7 +333,7 @@ function loadCurrentQuestionIntoEditor() {
           >
             <div class="flex flex-col">
               <span class="font-semibold">{{ challenge.title }}</span>
-              <span class="text-xs text-neutral-500">{{ challenge.module_code }}</span>
+              <span class="text-xs text-neutral-500">{{ challenge.module_code }} - Week {{ challenge.week_number}}</span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -9,6 +9,7 @@ import goldIcon from '~/assets/flat-icons/gold.png'
 import rubyIcon from '~/assets/flat-icons/ruby.png'
 import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
+import FunLoader from '~/components/FunLoader.vue'
 
 const { apiFetch } = useApiFetch()
 
@@ -86,6 +87,24 @@ const fetchStudentData = async () => {
       flatChallenges.push({ ...challenge, moduleCode: ch.module_code, moduleName: ch.module_name })
     })
 
+    // --- Sort by week_number (ascending) for consistency ---
+    for (const mod in challengesMap) {
+      challengesMap[mod].sort((a, b) => {
+        // handle null or undefined week numbers gracefully
+        if (a.week_number == null && b.week_number == null) return 0
+        if (a.week_number == null) return 1
+        if (b.week_number == null) return -1
+        return a.week_number - b.week_number
+      })
+    }
+
+    flatChallenges.sort((a, b) => {
+      if (a.week_number == null && b.week_number == null) return 0
+      if (a.week_number == null) return 1
+      if (b.week_number == null) return -1
+      return a.week_number - b.week_number
+    })
+
     challengesByModule.value = challengesMap
     challenges.value = flatChallenges
   } catch (err) {
@@ -128,7 +147,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
+  <FunLoader v-if="loading" />
+  <div v-else class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
     <div class="my-4 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2">
       <!-- Left: Welcome -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -147,34 +167,39 @@ onMounted(async () => {
       <Card
           v-for="challenge in challenges"
           :key="challenge.challenge_id"
-          class="h-auto sm:h-52 sm:min md:h-56 lg:h-60"
+          class="h-56 sm:h-60 md:h-64 lg:h-68 flex flex-col cursor-pointer"
           @click="goToChallenge(challenge)"
       >
-        <CardContent class="h-full flex flex-col justify-center p-4">
+        <CardContent class="flex flex-col h-full p-4">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-2">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between">
             <div class="flex flex-col">
               <span class="text-sm">{{ challenge.moduleCode }}</span>
               <span v-if="challenge.week_number != null" class="text-xs text-neutral-500">
-                Week: {{ challenge.week_number }}
-              </span>
+            Week: {{ challenge.week_number }}
+          </span>
             </div>
-            <span class="text-sm sm:text-base font-semibold text-center ml-2 sm:mt-0">
-              {{ challenge.challenge_name }}
-            </span>
+            <span
+                class="text-xs sm:text-sm font-semibold mt-2 sm:mt-0 break-words sm:max-w-[50%]"
+            >
+          {{ challenge.challenge_name }}
+        </span>
           </div>
 
+          <!-- Spacer to push progress bar and badges down -->
+          <div class="flex-1"></div>
+
           <!-- Badge Progress Bar -->
-          <div class="mt-2 mb-2 relative flex items-center w-full">
+          <div class="relative flex items-center w-full mt-2 mb-2">
             <!-- Connector Line -->
             <div class="absolute top-8 sm:top-10 left-0 w-full h-1 bg-neutral-300 z-0 rounded">
               <div
                   class="h-1 bg-purple-400 rounded"
                   :style="{
-                  width: challenge.type === 'weekly'
-                    ? Math.min((challenge.completedQuestions / challenge.totalQuestions) * 100, 100) + '%'
-                    : (challenge.completedQuestions >= 1 ? '100%' : '0%')
-                }"
+              width: challenge.type === 'weekly'
+                ? Math.min((challenge.completedQuestions / challenge.totalQuestions) * 100, 100) + '%'
+                : (challenge.completedQuestions >= 1 ? '100%' : '0%')
+            }"
               ></div>
             </div>
 
@@ -190,8 +215,8 @@ onMounted(async () => {
                     :src="stepIcons[index]"
                     :alt="step.title"
                     :class="challenge.completedQuestions >= weeklySteps.slice(0, index + 1).reduce((sum, s) => sum + s.questions, 0)
-                      ? 'opacity-100'
-                      : 'opacity-80 grayscale'"
+                ? 'opacity-100'
+                : 'opacity-80 grayscale'"
                 />
               </div>
             </template>
@@ -221,7 +246,7 @@ onMounted(async () => {
     <!-- Modules & Challenges Table -->
     <div class="mt-8 w-full max-w-[370px] sm:max-w-full overflow-x-auto rounded-lg shadow">
       <div class="inline-block min-w-full">
-        <div v-if="!loading">
+        <div>
           <Table class="table-auto w-full">
             <TableHeader>
               <TableRow>
@@ -266,7 +291,6 @@ onMounted(async () => {
             </TableBody>
           </Table>
         </div>
-        <div v-else class="text-center py-10">Loading student data...</div>
       </div>
     </div>
   </div>

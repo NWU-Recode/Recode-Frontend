@@ -11,7 +11,10 @@ import Emerald from '~/assets/flat-icons/emerald.png'
 import Diamond from '~/assets/flat-icons/diamond.png'
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '~/components/ui/table'
 import { useApiFetch } from '@/composables/useApiFetch'
+import FunLoader from '~/components/FunLoader.vue'
+import { AlertTriangle } from 'lucide-vue-next'
 
+const isLoading = ref(true)
 Chart.register(...registerables)
 
 const { apiFetch } = useApiFetch()
@@ -44,6 +47,23 @@ async function fetchLeaderboard(moduleCode?: string) {
     renderLeaderboardChart()
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err)
+  }
+}
+
+const highRiskStudents = ref<number[]>([])
+
+async function fetchHighRiskStudents() {
+  if (!token.value) await initAuth()
+  if (!token.value) return
+
+  try {
+    const res = await apiFetch('/students/high-risk', {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    // store student_ids in a simple array
+    highRiskStudents.value = res.map((s: any) => s.student_id)
+  } catch (err) {
+    console.error('Failed to fetch high-risk students:', err)
   }
 }
 
@@ -273,17 +293,35 @@ watch(selectedModuleCode, async (val) => {
   await fetchChallengeProgress(val)
 })
 
-onMounted(async () => {
-  await fetchModules()
-  await fetchLeaderboard()
-  if (modules.value.length) {
-    selectedModuleCode.value = modules.value[0].code
+async function fetchAllAnalytics() {
+  isLoading.value = true
+  try {
+    await fetchModules()
+    if (modules.value.length) {
+      selectedModuleCode.value = modules.value[0].code
+      await Promise.all([
+        fetchLeaderboard(selectedModuleCode.value),
+        fetchChallengeProgress(selectedModuleCode.value),
+        fetchHighRiskStudents(selectedModuleCode.value)
+      ])
+    } else {
+      await fetchLeaderboard()
+    }
+  } catch (err) {
+    console.error('Failed to fetch lecturer analytics:', err)
+  } finally {
+    isLoading.value = false
   }
+}
+
+onMounted(async () => {
+  await fetchAllAnalytics()
 })
 </script>
 
 <template>
-  <div class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
+  <FunLoader v-if="isLoading" />
+  <div v-else class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
 
     <!-- Module Dropdown -->
     <div class="w-full max-w-sm">
@@ -390,7 +428,21 @@ onMounted(async () => {
             >
               <!-- Main row: only name & number -->
               <template #default>
-                <TableCell>{{ student.number }}</TableCell>
+                <TableCell class="flex items-center gap-1">
+                  <TooltipProvider>
+                    <template v-if="highRiskStudents.includes(student.number)">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertTriangle class="w-4 h-4 text-yellow-400 cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          High-risk student – low completion rate or performance
+                        </TooltipContent>
+                      </Tooltip>
+                    </template>
+                  </TooltipProvider>
+                  {{ student.number }}
+                </TableCell>
                 <TableCell>{{ student.name }}</TableCell>
                 <TableCell />
               </template>
