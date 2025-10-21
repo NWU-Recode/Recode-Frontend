@@ -147,6 +147,21 @@ const badgeImages: Record<string, string> = {
   Diamond,
 }
 
+const semesters = ref<any[]>([])
+const currentSemester = ref<any | null>(null)
+
+async function fetchSemesters() {
+  try {
+    const res = await apiFetch('/semesters/', {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    semesters.value = res
+    currentSemester.value = res.find((s: any) => s.is_current)
+  } catch (err) {
+    console.error('Failed to fetch semesters:', err)
+  }
+}
+
 // --- Fetch modules ---
 async function fetchModules() {
   if (!token.value) await initAuth()
@@ -156,7 +171,13 @@ async function fetchModules() {
     const res = await apiFetch('/admin/', {
       headers: { Authorization: `Bearer ${token.value}` },
     })
-    modules.value = res
+
+    // Only keep modules from the current semester
+    const filtered = currentSemester.value
+        ? res.filter((m: any) => m.semester_id === currentSemester.value.id)
+        : res
+
+    modules.value = filtered
   } catch (err) {
     console.error('Failed to fetch modules', err)
   }
@@ -296,6 +317,7 @@ watch(selectedModuleCode, async (val) => {
 async function fetchAllAnalytics() {
   isLoading.value = true
   try {
+    await fetchSemesters()
     await fetchModules()
     if (modules.value.length) {
       selectedModuleCode.value = modules.value[0].code

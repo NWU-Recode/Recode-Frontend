@@ -1,36 +1,45 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useApiFetch } from '@/composables/useApiFetch'
 import { Loader2 } from 'lucide-vue-next'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu' // adjust path if needed
+import { useApiFetch } from '@/composables/useApiFetch'
 
 const { apiFetch } = useApiFetch()
 const emit = defineEmits(['close', 'saved'])
 
-// Props
 const props = defineProps({
-  module: Object,       // existing module to edit, optional
-  semesterId: String,   // semester_id to assign module to
+  module: Object,
+  semesterId: String,
+  semesters: {
+    type: Array,
+    default: () => [],
+  },
 })
 
-// Form state
 const form = ref({
   code: '',
   name: '',
   description: '',
   semester_id: props.semesterId || '',
   lecturer_id: '',
-  code_language: '',
+  code_language: 'python',
   credits: '',
 })
 
+const selectedSemesterId = ref(form.value.semester_id)
 const isLoading = ref(false)
 const errorMessage = ref(null)
 
-// Pre-fill form if editing
+// Watch for module edit
 watch(
     () => props.module,
     (mod) => {
@@ -39,30 +48,26 @@ watch(
           code: mod.code,
           name: mod.name,
           description: mod.description,
-          semester_id: props.semesterId,
+          semester_id: mod.semester_id || props.semesterId || '',
           lecturer_id: mod.lecturer_id,
-          code_language: mod.code_language,
+          code_language: mod.code_language || 'python',
           credits: mod.credits,
         }
+        selectedSemesterId.value = form.value.semester_id
       } else {
-        // Reset form for new module
-        form.value = {
-          code: '',
-          name: '',
-          description: '',
-          semester_id: props.semesterId,
-          lecturer_id: '',
-          code_language: '',
-          credits: '',
-        }
+        form.value.semester_id = props.semesterId || ''
+        selectedSemesterId.value = form.value.semester_id
       }
     },
     { immediate: true }
 )
 
+watch(selectedSemesterId, (val) => {
+  form.value.semester_id = val
+})
+
 // Submit handler
 async function onSubmit() {
-  // Simple front-end validation
   for (const [key, value] of Object.entries(form.value)) {
     if (!value) {
       errorMessage.value = `Field "${key}" is required`
@@ -75,34 +80,17 @@ async function onSubmit() {
 
   try {
     if (props.module) {
-      // Edit existing module
       await apiFetch(`/admin/${props.module.code}`, {
         method: 'PUT',
-        body: {
-          code: form.value.code,
-          name: form.value.name,
-          description: form.value.description,
-          semester_id: form.value.semester_id,
-          lecturer_id: Number(form.value.lecturer_id),
-          code_language: form.value.code_language,
-          credits: Number(form.value.credits),
-        },
+        body: { ...form.value, lecturer_id: Number(form.value.lecturer_id), credits: Number(form.value.credits) },
       })
     } else {
-      // Add new module
       await apiFetch('/admin/', {
         method: 'POST',
-        body: {
-          code: form.value.code,
-          name: form.value.name,
-          description: form.value.description,
-          semester_id: form.value.semester_id,
-          lecturer_id: Number(form.value.lecturer_id),
-          code_language: form.value.code_language,
-          credits: Number(form.value.credits),
-        },
+        body: { ...form.value, lecturer_id: Number(form.value.lecturer_id), credits: Number(form.value.credits) },
       })
     }
+
     emit('saved')
     emit('close')
   } catch (err) {
@@ -110,6 +98,14 @@ async function onSubmit() {
     errorMessage.value = 'Failed to save module. Please try again.'
   } finally {
     isLoading.value = false
+  }
+}
+
+function getSemesterStatus(sem) {
+  switch (sem.computed_status) {
+    case 'current': return 'Current'
+    case 'completed': return 'Completed'
+    default: return 'Upcoming'
   }
 }
 </script>
@@ -122,55 +118,77 @@ async function onSubmit() {
       </h2>
 
       <form @submit.prevent="onSubmit" class="grid gap-4">
-        <!-- Code -->
+        <!-- Semester Dropdown -->
+        <div class="grid gap-2">
+          <Label for="semester_id">Semester</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+                class="w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm flex items-center justify-between text-sm sm:text-base whitespace-normal break-words"
+            >
+              {{ selectedSemesterId ? props.semesters.find(s => s.id === selectedSemesterId)?.term_name : 'Select semester' }}
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent class="max-w-xs w-full break-words max-h-64 overflow-y-auto">
+              <DropdownMenuItem
+                  v-for="sem in props.semesters"
+                  :key="sem.id"
+                  @click="selectedSemesterId = sem.id"
+                  class="whitespace-normal"
+              >
+                <div class="flex flex-col">
+                  <span class="font-semibold">{{ sem.term_name }} ({{ sem.year }})</span>
+                  <span class="text-xs text-neutral-500">
+                    {{ sem.start_date }} → {{ sem.end_date }} — {{ getSemesterStatus(sem) }}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <!-- Other fields same as before -->
         <div class="grid gap-2">
           <Label for="code">Code</Label>
           <Input id="code" v-model="form.code" type="text" :disabled="isLoading" required />
         </div>
 
-        <!-- Name -->
         <div class="grid gap-2">
           <Label for="name">Name</Label>
           <Input id="name" v-model="form.name" type="text" :disabled="isLoading" required />
         </div>
 
-        <!-- Description -->
         <div class="grid gap-2">
           <Label for="description">Description</Label>
           <Textarea id="description" v-model="form.description" :disabled="isLoading" required />
         </div>
 
-        <!-- Lecturer ID -->
         <div class="grid gap-2">
           <Label for="lecturer_id">Lecturer ID</Label>
           <Input id="lecturer_id" v-model="form.lecturer_id" type="number" :disabled="isLoading" required />
         </div>
 
-        <!-- Code Language Dropdown -->
         <div class="grid gap-2">
           <Label for="code_language">Code Language</Label>
-          <select
-              id="code_language"
-              v-model="form.code_language"
-              :disabled="isLoading"
-              required
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="" disabled>Select language</option>
-            <option value="python">Python</option>
-            <option value="javascript" disabled>JavaScript</option>
-            <option value="cpp" disabled>C++</option>
-            <option value="java" disabled>Java</option>
-          </select>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+                class="w-full sm:w-auto px-4 py-2 border rounded-md shadow-sm flex items-center justify-between text-sm sm:text-base whitespace-normal break-words"
+            >
+              {{ form.code_language.charAt(0).toUpperCase() + form.code_language.slice(1) }}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="max-w-xs w-full break-words max-h-64 overflow-y-auto">
+              <DropdownMenuItem @click="form.code_language = 'python'">Python</DropdownMenuItem>
+              <DropdownMenuItem @click="form.code_language = 'javascript'">JavaScript</DropdownMenuItem>
+              <DropdownMenuItem @click="form.code_language = 'cpp'">C++</DropdownMenuItem>
+              <DropdownMenuItem @click="form.code_language = 'java'">Java</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <!-- Credits -->
         <div class="grid gap-2">
           <Label for="credits">Credits</Label>
           <Input id="credits" v-model="form.credits" type="number" :disabled="isLoading" required />
         </div>
 
-        <!-- Footer Buttons -->
         <div class="flex justify-end gap-2 mt-4">
           <Button variant="secondary" @click="$emit('close')" :disabled="isLoading">Cancel</Button>
           <Button :disabled="isLoading" class="flex items-center gap-2">
@@ -179,7 +197,6 @@ async function onSubmit() {
           </Button>
         </div>
 
-        <!-- Error -->
         <p v-if="errorMessage" class="mt-2 text-sm text-red-500">{{ errorMessage }}</p>
       </form>
     </div>

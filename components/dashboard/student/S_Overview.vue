@@ -12,14 +12,11 @@ import diamondIcon from '~/assets/flat-icons/diamond.png'
 import FunLoader from '~/components/FunLoader.vue'
 
 const { apiFetch } = useApiFetch()
-
 const router = useRouter()
 
+// --- Navigation ---
 const goToChallenge = (challenge: any) => {
-  // Store challengeId (and maybe module/week) so coding challenge view can fetch questions
   localStorage.setItem('currentChallengeId', challenge.challenge_id)
-
-  // Navigate to coding challenge view
   router.push({
     path: '/coding-challenge',
     state: {
@@ -29,22 +26,20 @@ const goToChallenge = (challenge: any) => {
   })
 }
 
-// Badge tiers and question counts per weekly challenge
+// --- Badge icons ---
 const weeklySteps = [
   { step: 1, title: 'Bronze', questions: 2 },
   { step: 2, title: 'Silver', questions: 2 },
   { step: 3, title: 'Gold', questions: 1 },
 ]
-
 const stepIcons = [bronzeIcon, silverIcon, goldIcon]
-
-// Map for special challenge icons by tier
 const specialIcons: Record<string, string> = {
   ruby: rubyIcon,
   emerald: emeraldIcon,
   diamond: diamondIcon,
 }
 
+// --- State ---
 const student = ref({
   full_name: '',
   avatar_url: null,
@@ -52,12 +47,26 @@ const student = ref({
   title_name: '',
 })
 
+const semesters = ref<any[]>([])
+const currentSemester = ref<any | null>(null)
 const modules = ref<any[]>([])
 const challenges: any[] = ref([])
 const challengesByModule = ref<{ [key: string]: any[] }>({})
 const loading = ref(true)
+const currentWeek = ref<number | null>(null)
 
-// Fetch student data, modules, and challenges
+// --- Fetch Semesters ---
+async function fetchSemesters() {
+  try {
+    const res = await apiFetch('/semesters/')
+    semesters.value = res
+    currentSemester.value = res.find((s: any) => s.is_current)
+  } catch (err) {
+    console.error('Failed to fetch semesters:', err)
+  }
+}
+
+// --- Fetch Student Data, Modules & Challenges ---
 const fetchStudentData = async () => {
   try {
     loading.value = true
@@ -65,14 +74,31 @@ const fetchStudentData = async () => {
     const profileData = await apiFetch('/student/me/progress')
     student.value = profileData.profile || {}
 
+    // --- Fetch all modules ---
     const modulesData = await apiFetch('/admin/')
-    modules.value = Array.isArray(modulesData) ? modulesData : []
+    const allModules = Array.isArray(modulesData) ? modulesData : []
 
+    // --- Filter to current semester ---
+    const filteredModules = currentSemester.value
+        ? allModules.filter((m: any) => m.semester_id === currentSemester.value.id)
+        : allModules
+
+    modules.value = filteredModules
+
+    // --- Fetch challenges ---
     const challengesData = await apiFetch('/student/challenges')
+
+    // --- Filter challenges by current semester modules ---
+    const validModuleCodes = new Set(filteredModules.map((m: any) => m.code))
+    const filteredChallenges = challengesData.filter((ch: any) =>
+        validModuleCodes.has(ch.module_code)
+    )
+
+    // --- Build map and sorted arrays ---
     const challengesMap: { [key: string]: any[] } = {}
     const flatChallenges: any[] = []
 
-    challengesData.forEach(ch => {
+    filteredChallenges.forEach(ch => {
       if (!challengesMap[ch.module_code]) challengesMap[ch.module_code] = []
 
       const challenge = {
@@ -87,10 +113,9 @@ const fetchStudentData = async () => {
       flatChallenges.push({ ...challenge, moduleCode: ch.module_code, moduleName: ch.module_name })
     })
 
-    // --- Sort by week_number (ascending) for consistency ---
+    // --- Sort challenges by week number ---
     for (const mod in challengesMap) {
       challengesMap[mod].sort((a, b) => {
-        // handle null or undefined week numbers gracefully
         if (a.week_number == null && b.week_number == null) return 0
         if (a.week_number == null) return 1
         if (b.week_number == null) return -1
@@ -114,22 +139,32 @@ const fetchStudentData = async () => {
   }
 }
 
-// Compute total questions completed in a challenge
-const challengeProgressPercentage = (challenge: any) => {
-  return Math.round((challenge.completedQuestions / challenge.totalQuestions) * 100)
-}
+// --- Helpers ---
+const challengeProgressPercentage = (challenge: any) =>
+    Math.round((challenge.completedQuestions / challenge.totalQuestions) * 100)
 
-// Module-level progress
 const moduleProgress = (modCode: string) => {
-  const challenges = challengesByModule.value[modCode] || []
-  if (!challenges.length) return 0
-  const total = challenges.length
-  const completed = challenges.filter(ch => ch.challenge_completion_rate >= 100).length
+  const chs = challengesByModule.value[modCode] || []
+  if (!chs.length) return 0
+  const total = chs.length
+  const completed = chs.filter(ch => ch.challenge_completion_rate >= 100).length
   return Math.round((completed / total) * 100)
 }
 
-const currentWeek = ref<number | null>(null)
+const challengeStatusLabel = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return { label: 'Closed', color: 'green' }
+    case 'active':
+      return { label: 'Active', color: 'blue' }
+    case 'draft':
+      return { label: 'Not active', color: 'red' }
+    default:
+      return { label: 'Unknown', color: 'gray' }
+  }
+}
 
+// --- Fetch Current Week ---
 async function fetchCurrentWeek() {
   try {
     const res = await apiFetch('/dashboard/current-week')
@@ -141,6 +176,7 @@ async function fetchCurrentWeek() {
 }
 
 onMounted(async () => {
+  await fetchSemesters()
   await fetchStudentData()
   await fetchCurrentWeek()
 })
@@ -176,14 +212,21 @@ onMounted(async () => {
             <div class="flex flex-col">
               <span class="text-sm">{{ challenge.moduleCode }}</span>
               <span v-if="challenge.week_number != null" class="text-xs text-neutral-500">
-            Week: {{ challenge.week_number }}
-          </span>
+                Week: {{ challenge.week_number }}
+              </span>
+              <span class="flex items-center mt-1 text-xs text-neutral-500">
+              <span
+                  class="w-2 h-2 rounded-full shadow-lg animate-pulse mr-2"
+                  :class="`bg-${challengeStatusLabel(challenge.challenge_status).color}-500`"
+              ></span>
+                {{ challengeStatusLabel(challenge.challenge_status).label }}
+              </span>
             </div>
             <span
                 class="text-xs sm:text-sm font-semibold mt-2 sm:mt-0 break-words sm:max-w-[50%]"
             >
-          {{ challenge.challenge_name }}
-        </span>
+              {{ challenge.challenge_name }}
+            </span>
           </div>
 
           <!-- Spacer to push progress bar and badges down -->
@@ -277,15 +320,19 @@ onMounted(async () => {
                       <div class="contents" @click="goToChallenge(challenge)">
                         <TableCell />
                         <TableCell colspan="2">{{ challenge.challenge_name }}</TableCell>
-                        <TableCell>Week {{ challenge.week_number ?? '-' }}</TableCell>
                         <TableCell>
-                          <span>{{ challenge.completedQuestions }} / {{ challenge.totalQuestions }}</span>
-                          <span class="ml-6">{{ challenge.challenge_completion_rate }}%</span>
+                          Open: {{ new Date(challenge.release_date).toLocaleDateString('en-GB', {
+                          day: '2-digit', month: 'short', year: 'numeric'
+                        }) }}
+                        </TableCell>
+                        <TableCell>
+                          Due: {{ new Date(challenge.due_date).toLocaleDateString('en-GB', {
+                          day: '2-digit', month: 'short', year: 'numeric'
+                        }) }}
                         </TableCell>
                       </div>
                     </template>
                   </TableRow>
-
                 </template>
               </TableRow>
             </TableBody>

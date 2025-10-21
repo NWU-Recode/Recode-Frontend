@@ -27,15 +27,33 @@ function getToken() {
   return localStorage.getItem('token') || ''
 }
 
-// Fetch modules for lecturer
+const currentSemester = ref(null)
+
 async function fetchModules() {
   try {
+    // 1. Fetch all semesters
+    const semesters = await apiFetch('/semesters/', {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+
+    // 2. Find the current semester
+    currentSemester.value = semesters.find(s => s.is_current)
+    if (!currentSemester.value) {
+      console.warn('No current semester found')
+      modules.value = []
+      return
+    }
+
+    // 3. Fetch all modules for lecturer
     const res = await apiFetch('/admin/', {
       headers: { Authorization: `Bearer ${getToken()}` }
     })
-    modules.value = res
 
-    for (const mod of res) {
+    // 4. Only keep modules for the current semester
+    modules.value = res.filter(m => m.semester_id === currentSemester.value.id)
+
+    // 5. Fetch students for each module
+    for (const mod of modules.value) {
       await fetchStudents(mod.code)
     }
   } catch (err) {
@@ -93,12 +111,26 @@ async function uploadCsv(moduleCode, file) {
   }
 }
 
+// Notifications state
+const notifications = ref([])
+let notifIdCounter = 0
+function showNotification(title, description, variant = 'default') {
+  const id = notifIdCounter++
+  notifications.value.push({ id, title, description, variant })
+  setTimeout(() => {
+    notifications.value = notifications.value.filter(n => n.id !== id)
+  }, 5000)
+}
+
 // Add a single student via modal
 async function addStudent() {
   if (!selectedModuleCode.value || !newStudentNumber.value) return
 
   try {
-    const semesterId = modules.value.find(m => m.code === selectedModuleCode.value)?.semester_id
+    // Use current semester instead of module semester_id
+    const semesterId = currentSemester.value?.id
+    if (!semesterId) throw new Error('No current semester selected')
+
     await apiFetch(`/admin/${selectedModuleCode.value}/enrol`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${getToken()}` },
@@ -110,12 +142,24 @@ async function addStudent() {
     })
 
     await fetchStudents(selectedModuleCode.value)
-    uploadStatus.value[selectedModuleCode.value].success = `Student ${newStudentNumber.value} enrolled successfully!`
+
+    // Show success notification
+    showNotification(
+        'Student Enrolled',
+        `Student ${newStudentNumber.value} enrolled successfully in ${selectedModuleCode.value}`,
+        'default'
+    )
+
+    // Reset modal state
     newStudentNumber.value = ''
     addStudentModalOpen.value = false
   } catch (err) {
     console.error('Add student failed', err)
-    uploadStatus.value[selectedModuleCode.value].error = `Failed to enroll student ${newStudentNumber.value}`
+    showNotification(
+        'Enrollment Failed',
+        `Failed to enroll student ${newStudentNumber.value}`,
+        'destructive'
+    )
   }
 }
 
@@ -132,6 +176,15 @@ onMounted(fetchModules)
 
 <template>
   <div v-if="props.profile.role === 'lecturer'">
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+      <transition-group name="notif" tag="div">
+        <Alert v-for="notif in notifications" :key="notif.id" :variant="notif.variant">
+          <AlertTitle>{{ notif.title }}</AlertTitle>
+          <AlertDescription>{{ notif.description }}</AlertDescription>
+        </Alert>
+      </transition-group>
+    </div>
+
     <Table>
       <TableHeader>
         <TableRow>

@@ -10,6 +10,13 @@ import { Loader2 } from 'lucide-vue-next'
 const { apiFetch } = useApiFetch()
 const emit = defineEmits(['close', 'saved'])
 
+const props = defineProps({
+  hasCurrent: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const form = ref({
   year: new Date().getFullYear(),
   term_name: '',
@@ -77,8 +84,14 @@ async function onSubmit() {
 
         <!-- Current Semester Toggle -->
         <div class="flex items-center gap-2 mt-2">
-          <Toggle v-model:pressed="form.is_current" :disabled="isLoading" />
+          <Toggle
+              v-model:pressed="form.is_current"
+              :disabled="isLoading || props.hasCurrent"
+          />
           <Label for="is_current">Set as Current Semester</Label>
+          <p v-if="props.hasCurrent" class="text-xs text-neutral-500">
+            A current semester already exists.
+          </p>
         </div>
 
         <!-- Footer Buttons -->
