@@ -31,6 +31,27 @@ async function initAuth() {
 }
 await initAuth();
 
+const currentSemester = ref<any>(null);
+
+async function fetchCurrentSemester() {
+  if (!token.value) await initAuth();
+  if (!token.value) return;
+
+  try {
+    const semesters = await apiFetch("/semesters/", {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+
+    currentSemester.value = semesters.find(s => s.is_current) || null;
+
+    if (!currentSemester.value) {
+      console.warn("No current semester found");
+    }
+  } catch (err) {
+    console.error("Failed to fetch semesters:", err);
+  }
+}
+
 // Fetch modules
 async function fetchModules() {
   if (!token.value) await initAuth();
@@ -40,7 +61,13 @@ async function fetchModules() {
     const res = await apiFetch("/admin/", {
       headers: { Authorization: `Bearer ${token.value}` },
     });
-    modules.value = res;
+
+    // Only keep modules for current semester
+    if (currentSemester.value) {
+      modules.value = res.filter(m => m.semester_id === currentSemester.value.id);
+    } else {
+      modules.value = [];
+    }
   } catch (err) {
     console.error("Failed to fetch modules", err);
   }
@@ -162,15 +189,29 @@ async function fetchCurrentWeek() {
   }
 }
 
+const challengeStatusLabel = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return { label: 'Closed', color: 'green' }
+    case 'active':
+      return { label: 'Active', color: 'blue' }
+    case 'draft':
+      return { label: 'Not active', color: 'red' }
+    default:
+      return { label: 'Unknown', color: 'gray' }
+  }
+}
+
 async function fetchAllData() {
   isLoading.value = true
   try {
-    await fetchModules()
+    await fetchCurrentSemester();
+    await fetchModules();
     await Promise.all([
       fetchSlides(),
       fetchChallenges(),
       fetchCurrentWeek(),
-    ])
+    ]);
   } catch (err) {
     console.error('Failed to fetch uploads data:', err)
   } finally {
@@ -308,17 +349,10 @@ onMounted(async () => {
                   <TableCell>
                     <div class="flex items-center gap-2">
                       <span
-                          v-if="challenge.status === 'active'"
-                          class="w-2 h-2 rounded-full bg-green-500 shadow-lg animate-pulse"
-                      >
-                      </span>
-                      <span
-                          v-else
-                          class="w-2 h-2 rounded-full bg-red-500 shadow-lg animate-pulse"
+                          class="w-2 h-2 rounded-full shadow-lg animate-pulse"
+                          :class="`bg-${challengeStatusLabel(challenge.status).color}-500`"
                       ></span>
-                      <span class="capitalize">
-                        {{ challenge.status === 'active' ? 'Active' : 'Not Active' }}
-                      </span>
+                      <span>{{ challengeStatusLabel(challenge.status).label }}</span>
                     </div>
                   </TableCell>
                 </template>

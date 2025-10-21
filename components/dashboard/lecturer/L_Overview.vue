@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { ChevronLeft, ChevronRight, Send, BookOpenText, CodeXml, Brain } from 'lucide-vue-next'
 import { Card, CardContent } from '~/components/ui/card'
@@ -21,6 +21,9 @@ const { apiFetch } = useApiFetch()
 // --- User info ---
 const lecturer = ref<{ full_name: string }>({ full_name: '' })
 
+// --- Semesters ---
+const currentSemester = ref<any>(null)
+
 // --- Modules & Challenges ---
 const modules = ref<any[]>([])
 const cards = ref<any[]>([]) // challenge progress cards
@@ -37,6 +40,15 @@ let editor: monaco.editor.IStandaloneCodeEditor
 const selectedLanguage = 'python'
 
 const currentWeek = ref<number | null>(null)
+
+async function fetchCurrentSemester() {
+  try {
+    const res = await apiFetch('/semesters/')
+    currentSemester.value = res.find((s: any) => s.is_current) || null
+  } catch (err) {
+    console.error('Failed to fetch semesters:', err)
+  }
+}
 
 async function fetchCurrentWeek() {
   try {
@@ -62,7 +74,9 @@ async function fetchLecturer() {
 async function fetchModules() {
   try {
     const res = await apiFetch('/admin/')
-    modules.value = res
+    modules.value = currentSemester.value
+        ? res.filter((m: any) => m.semester_id === currentSemester.value.id)
+        : res
   } catch (err) {
     console.error('Failed to fetch modules:', err)
   }
@@ -72,7 +86,15 @@ async function fetchModules() {
 async function fetchCards() {
   try {
     const res = await apiFetch('/challenge/progress')
-    const sorted = res
+
+    const filtered = currentSemester.value
+        ? res.filter((c: any) => {
+          const module = modules.value.find(m => m.code === c.module_code)
+          return module && module.semester_id === currentSemester.value.id
+        })
+        : res
+
+    const sorted = filtered
         .map((c: any) => {
           let icons: string[] = []
           let percentages: number[] = []
@@ -106,7 +128,6 @@ async function fetchCards() {
           }
         })
         .sort((a, b) => {
-          // push null or undefined week numbers to the end
           if (a.week_number == null && b.week_number == null) return 0
           if (a.week_number == null) return 1
           if (b.week_number == null) return -1
@@ -119,10 +140,19 @@ async function fetchCards() {
   }
 }
 
+// --- Fetch challenges (dropdown list) ---
 async function fetchChallenges() {
   try {
     const res = await apiFetch('/challenge/progress')
-    const sorted = res
+
+    const filtered = currentSemester.value
+        ? res.filter((c: any) => {
+          const module = modules.value.find(m => m.code === c.module_code)
+          return module && module.semester_id === currentSemester.value.id
+        })
+        : res
+
+    const sorted = filtered
         .map((c: any) => ({
           id: c.challenge_id,
           title: c.challenge_name,
@@ -146,21 +176,12 @@ async function fetchQuestionsForChallenge(challengeId: string) {
   try {
     const data = await apiFetch(`/challenges/${challengeId}/questions`)
     questions.value = data.items || []
-
-    if (questions.value.length === 0) {
-      // ✅ Clear editor if no questions found
-      if (editor) editor.setValue('')
-      currentQuestionIndex.value = 0
-      return
-    }
-
-    // ✅ Load first question into editor
+    if (!questions.value.length && editor) editor.setValue('')
     currentQuestionIndex.value = 0
-    loadCurrentQuestionIntoEditor()
+    if (questions.value.length) loadCurrentQuestionIntoEditor()
   } catch (err) {
     console.error('Failed to load questions', err)
     questions.value = []
-    // ✅ Also clear editor if request fails
     if (editor) editor.setValue('')
   }
 }
@@ -180,16 +201,17 @@ async function fetchTestcases(challengeId: string, questionId: string) {
   }
 }
 
-function formatInput(value) {
+function formatInput(value: string) {
   return value ? value.trim().split('\n') : []
 }
 
 async function fetchAllData() {
   isLoading.value = true
   try {
+    await fetchCurrentSemester()
+    await fetchLecturer()
+    await fetchModules()
     await Promise.all([
-      fetchLecturer(),
-      fetchModules(),
       fetchChallenges(),
       fetchCards(),
       fetchCurrentWeek(),
@@ -201,7 +223,7 @@ async function fetchAllData() {
   }
 }
 
-
+// --- Lifecycle ---
 onMounted(() => {
   fetchAllData()
 

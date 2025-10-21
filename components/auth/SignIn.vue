@@ -63,9 +63,9 @@ async function onSubmit(event: Event) {
 </script>
 
 <template>
-  <div class="flex items-center justify-center px-4 py-8 lg:px-8 sm:px-6">
-    <div class="max-w-md w-full space-y-6">
-      <form class="grid gap-6" @submit="onSubmit">
+  <div :class="cn('grid gap-6', $attrs.class ?? '')">
+    <form @submit="onSubmit">
+      <div class="grid gap-4">
         <!-- Email -->
         <div class="grid gap-2">
           <label for="email">Email</label>
@@ -105,15 +105,15 @@ async function onSubmit(event: Event) {
           <Loader2 v-if="isLoading" class="h-4 w-4 animate-spin" />
           Login
         </Button>
-      </form>
-
-      <!-- Register link -->
-      <div class="mt-4 text-center text-sm text-muted-foreground">
-        Don't have an account?
-        <NuxtLink to="/register" class="underline">
-          Sign up
-        </NuxtLink>
       </div>
+    </form>
+
+    <!-- Register link -->
+    <div class="text-center text-sm text-muted-foreground">
+      Don't have an account?
+      <NuxtLink to="/register" class="underline">
+        Sign up
+      </NuxtLink>
     </div>
   </div>
 </template>
