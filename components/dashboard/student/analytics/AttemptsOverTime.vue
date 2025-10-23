@@ -23,15 +23,14 @@ const renderChart = () => {
   const ctx = document.getElementById('attemptsOverTimeChart') as HTMLCanvasElement
   if (!ctx || !analyticsData.value) return
 
-  // Last 20 attempts
-  const recentAttempts = analyticsData.value.recent.slice(-20)
+  // Last 20 submissions
+  const recentSubmissions = analyticsData.value.recent_submissions.slice(-20)
 
-  const labels = recentAttempts.map((r: any) =>
+  const labels = recentSubmissions.map((r: any) =>
       new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   )
 
-  // Map status to numeric + color
-  const data = recentAttempts.map((r: any) => {
+  const data = recentSubmissions.map((r: any) => {
     switch (r.status_id) {
       case 3: return { y: 3, backgroundColor: 'rgb(34 197 94)' } // pass - green
       case 2: return { y: 2, backgroundColor: 'rgb(251 191 36)' } // partial - yellow

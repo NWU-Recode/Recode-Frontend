@@ -164,27 +164,27 @@ watch(podium, () => setPodiumHeight())
           </div>
 
           <!-- Chart Display -->
-          <div v-if="activeTab === 'ELO Distribution'">
+          <div v-show="activeTab === 'ELO Distribution'">
             <EloDistribution />
           </div>
 
-          <div v-else-if="activeTab === 'Tier Distribution'">
+          <div v-show="activeTab === 'Tier Distribution'">
             <TierDistribution />
           </div>
 
-          <div v-else-if="activeTab === 'Attempts Over Time'">
+          <div v-show="activeTab === 'Attempts Over Time'">
             <AttemptsOverTime />
           </div>
 
-          <div v-else-if="activeTab === 'Cumulative Attempts'">
+          <div v-show="activeTab === 'Cumulative Attempts'">
             <CumulativeAttempts />
           </div>
 
-          <div v-else-if="activeTab === 'Pass vs Fail Attempts'">
+          <div v-show="activeTab === 'Pass vs Fail Attempts'">
             <PassFailAttempts />
           </div>
 
-          <div v-else-if="activeTab === 'Pass Rate'">
+          <div v-show="activeTab === 'Pass Rate'">
             <PassRate />
           </div>
         </div>

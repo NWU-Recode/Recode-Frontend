@@ -6,13 +6,21 @@ import { useApiFetch } from '@/composables/useApiFetch'
 Chart.register(...registerables)
 
 const { apiFetch } = useApiFetch()
-const analyticsData = ref<any[]>([])
+const analytics = ref<{ total_attempts: number; total_passed: number; total_failed: number }>({
+  total_attempts: 0,
+  total_passed: 0,
+  total_failed: 0,
+})
 let passRateChart: Chart | null = null
 
 const fetchAnalytics = async () => {
   try {
     const data = await apiFetch('/student/me/analytics')
-    analyticsData.value = data.recent || []
+    analytics.value = {
+      total_attempts: data.total_attempts,
+      total_passed: data.total_passed,
+      total_failed: data.total_failed,
+    }
   } catch (err) {
     console.error('Failed to fetch analytics:', err)
   }
@@ -20,15 +28,11 @@ const fetchAnalytics = async () => {
 
 const renderChart = () => {
   const ctx = document.getElementById('passRateChart') as HTMLCanvasElement
-  if (!ctx || !analyticsData.value.length) return
+  if (!ctx || analytics.value.total_attempts === 0) return
   if (passRateChart) passRateChart.destroy()
 
-  const totalAttempts = analyticsData.value.length
-  const totalPassed = analyticsData.value.filter(
-      a => a.additional_files.tests_passed === a.additional_files.tests_total
-  ).length
-  const totalFailed = totalAttempts - totalPassed
-  const passPercentage = ((totalPassed / totalAttempts) * 100).toFixed(1)
+  const { total_passed, total_failed, total_attempts } = analytics.value
+  const passPercentage = ((total_passed / total_attempts) * 100).toFixed(1)
 
   passRateChart = new Chart(ctx, {
     type: 'doughnut',
@@ -36,7 +40,7 @@ const renderChart = () => {
       labels: ['Passed', 'Failed'],
       datasets: [
         {
-          data: [totalPassed, totalFailed],
+          data: [total_passed, total_failed],
           backgroundColor: ['rgb(34 197 94)', 'rgb(220 38 38)'],
           hoverOffset: 10,
         },
