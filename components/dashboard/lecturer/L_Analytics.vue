@@ -130,12 +130,33 @@ const selectedChallenge = computed(() =>
     challenges.value.find(c => c.challenge_id === selectedChallengeId)
 )
 
-// --- Top cards derived from selected challenge ---
-const submissionsPercentage = computed(() =>
-    selectedChallenge?.value?.challenge_participation_rate ?? 0
-)
-const avgElo = computed(() => selectedChallenge?.value?.avg_elo_of_successful_students ?? 0)
-const avgCompletionTime = computed(() => selectedChallenge?.value?.avg_completion_time_minutes ?? 0)
+// --- Top cards aggregated over all challenges ---
+const submissionsPercentage = computed(() => {
+  if (!challengeProgressData.value.length) return 0
+  const totalCompleted = challengeProgressData.value.reduce(
+      (sum, c) => sum + (c.students_completed || 0),
+      0
+  )
+  const totalEnrolled = challengeProgressData.value.reduce(
+      (sum, c) => sum + (c.total_enrolled_students || 0),
+      0
+  )
+  return totalEnrolled ? Math.round((totalCompleted / totalEnrolled) * 100) : 0
+})
+
+const avgElo = computed(() => {
+  const challengesWithElo = challengeProgressData.value.filter(c => c.avg_elo_earned != null)
+  if (!challengesWithElo.length) return 0
+  const totalElo = challengesWithElo.reduce((sum, c) => sum + c.avg_elo_earned, 0)
+  return Math.round(totalElo / challengesWithElo.length)
+})
+
+const avgCompletionTime = computed(() => {
+  const challengesWithTime = challengeProgressData.value.filter(c => c.avg_completion_time_minutes != null)
+  if (!challengesWithTime.length) return 0
+  const totalTime = challengesWithTime.reduce((sum, c) => sum + c.avg_completion_time_minutes, 0)
+  return Math.round(totalTime / challengesWithTime.length)
+})
 
 // --- Badge image mapping ---
 const badgeImages: Record<string, string> = {
@@ -241,7 +262,7 @@ function renderChallengeChart() {
 
   if (challengeChart) challengeChart.destroy()
 
-  let data = challengeProgressData.value
+  const data = challengeProgressData.value
 
   challengeChart = new Chart(ctx, {
     type: 'pie',
@@ -266,13 +287,26 @@ function renderChallengeChart() {
     options: {
       responsive: true,
       plugins: {
-        legend: { display: true },
+        legend: {
+          display: true,
+          position: 'right',       // 'right' or 'left'
+          align: 'center',
+          labels: {
+            boxWidth: 20,
+            padding: 20,           // space between legend marker and text
+            usePointStyle: true,
+            pointStyle: 'circle',
+          },
+        },
         title: {
           display: true,
           text:
               data.every((c: any) => c.students_completed === 0)
                   ? `No submissions yet for ${selectedModuleCode.value}`
                   : `Challenge Completion for ${selectedModuleCode.value}`,
+          padding: {
+            bottom: 20
+          },
         },
         tooltip: {
           callbacks: {
@@ -285,10 +319,28 @@ function renderChallengeChart() {
           },
         },
       },
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+        },
+      },
     },
   })
-}
 
+  // Ensure parent container is flex and centered
+  const container = ctx.parentElement
+  if (container) {
+    container.style.display = 'flex'
+    container.style.justifyContent = 'center'  // horizontally center
+    container.style.alignItems = 'center'      // vertically center
+    container.style.flexDirection = 'row'      // chart + legend side by side
+    container.style.gap = '40px'               // space between chart and legend
+    container.style.overflow = 'visible'       // prevent legend cutoff
+  }
+}
 
 watch(selectedModuleCode, async (moduleCode) => {
   if (!moduleCode) return
@@ -421,9 +473,12 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-else-if="activeTab === 'Challenge Progress'" class="w-100 h-100">
-          <div class="relative w-full" style="aspect-ratio: 16 / 9;">
-            <canvas id="challengeChart" class="w-full h-full"></canvas>
+        <div v-else-if="activeTab === 'Challenge Progress'" class="w-full">
+          <div
+              class="flex justify-center items-center"
+              style="overflow: visible; min-height: 400px;"
+          >
+            <canvas id="challengeChart" class="max-w-full max-h-[500px]"></canvas>
           </div>
         </div>
       </div>

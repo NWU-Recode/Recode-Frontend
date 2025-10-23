@@ -130,8 +130,6 @@ onMounted(() => {
   fetchQuestions()
 })
 
-
-
 // --- Fetch questions ---
 async function fetchQuestions() {
   try {
@@ -270,7 +268,6 @@ function formatInput(input: string) {
   return input.split('\n')
 }
 
-
 // --- Run Code ---
 const runningCode = ref(false)
 const executionOutput = ref('')
@@ -297,7 +294,6 @@ async function runCurrentCode() {
       return
     }
 
-    // Run each testcase sequentially
     for (const tc of testcases) {
       try {
         const response: any = await apiFetch('/judge0/execute/simple', {
@@ -309,11 +305,8 @@ async function runCurrentCode() {
             stdin: tc.input ?? ''
           }
         })
-
-        // Judge0 response
         tc.got = response.stdout?.trim() ?? ''
         tc.passed = (tc.got === (tc.expected ?? '').trim())
-
       } catch (err) {
         console.error('Execution failed for testcase', tc, err)
         tc.got = ''
@@ -321,7 +314,6 @@ async function runCurrentCode() {
       }
     }
 
-    // Update main output section with summary
     executionOutput.value = testcases.map((tc, idx) =>
         `Test Case ${idx + 1}: ${tc.passed ? 'Passed ✅' : 'Failed ❌'}`
     ).join('\n')
@@ -335,6 +327,13 @@ async function runCurrentCode() {
 }
 
 // --- Submit ---
+const submittingChallenge = ref(false)
+
+const submitButtonLabel = computed(() => {
+  if (submittingChallenge.value) return 'Submitting...'
+  return currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save'
+})
+
 async function handleSubmit() {
   if (!editor) return
 
@@ -363,6 +362,7 @@ async function handleSubmit() {
 
   const totalDuration = elapsedSecondsPerQuestion.value.reduce((a, b) => a + b, 0)
 
+  submittingChallenge.value = true
   try {
     await apiFetch(`/submissions/challenges/${challengeId}/submit-challenge`, {
       method: 'POST',
@@ -375,12 +375,10 @@ async function handleSubmit() {
   } catch (err) {
     console.error('Submission failed', err)
     showNotification('Submission Failed', 'Please try again.', 'destructive')
+  } finally {
+    submittingChallenge.value = false
   }
 }
-
-const submitButtonLabel = computed(() =>
-    currentQuestionIndex.value === questions.value.length - 1 ? 'Submit Challenge' : 'Save'
-)
 
 // --- UI state ---
 const showDescription = ref(true)
@@ -423,7 +421,6 @@ function onMouseUp() {
 }
 </script>
 
-
 <template>
   <div class="flex w-full h-screen relative">
     <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
@@ -446,7 +443,6 @@ function onMouseUp() {
         </div>
       </div>
 
-
       <!-- Top Buttons -->
       <div class="flex items-center justify-between p-4">
         <div class="flex items-center gap-2">
@@ -463,19 +459,13 @@ function onMouseUp() {
           <Button variant="ghost" :leftIcon="Timer" @click="toggleTimer">
             {{ formattedTime }}
           </Button>
-          <Button
-              variant="ghost"
-              :leftIcon="BugPlay"
-              :disabled="runningCode"
-              @click="runCurrentCode"
-          >
+          <Button variant="ghost" :leftIcon="BugPlay" :disabled="runningCode" @click="runCurrentCode">
             {{ runningCode ? 'Running...' : 'Run Code' }}
           </Button>
           <Button @click="loadCurrentQuestionIntoEditor">Reset to Starter Code</Button>
-          <Button variant="outline" :leftIcon="Send" @click="handleSubmit">
+          <Button variant="outline" :leftIcon="Send" :disabled="submittingChallenge" @click="handleSubmit">
             {{ submitButtonLabel }}
           </Button>
-
         </div>
 
         <div>
