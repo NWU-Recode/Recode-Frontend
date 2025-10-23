@@ -74,6 +74,12 @@ const showModalTheme = ref(false)
                 Github repository
               </NuxtLink>
             </DropdownMenuItem>
+            <DropdownMenuItem as-child>
+              <NuxtLink to="https://recode-documentation.vercel.app" external target="_blank">
+                <Icon name="i-lucide-book" />
+                Documentation
+              </NuxtLink>
+            </DropdownMenuItem>
             <DropdownMenuItem @click="showModalTheme = true">
               <Icon name="i-lucide-paintbrush" />
               Theme

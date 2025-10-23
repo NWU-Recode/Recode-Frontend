@@ -147,7 +147,7 @@ const submissionsPercentage = computed(() => {
 const avgElo = computed(() => {
   const challengesWithElo = challengeProgressData.value.filter(c => c.avg_elo_earned != null)
   if (!challengesWithElo.length) return 0
-  const totalElo = challengesWithElo.reduce((sum, c) => sum + c.avg_elo_earned, 0)
+  const totalElo = challengesWithElo.reduce((sum, c) => sum + Math.abs(c.avg_elo_earned), 0)
   return Math.round(totalElo / challengesWithElo.length)
 })
 
