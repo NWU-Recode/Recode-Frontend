@@ -36,8 +36,9 @@ const files: FileItem[] = reactive([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 
-// Modules fetched from API
-const modules = ref<{ code: string; name: string }[]>([]);
+// Modules and semester
+const modules = ref<{ code: string; name: string; semester_id: number }[]>([]);
+const currentSemester = ref<{ id: number; name: string } | null>(null);
 
 async function initAuth() {
   if (!isAuthenticated.value) {
@@ -47,6 +48,16 @@ async function initAuth() {
   token.value = localStorage.getItem("access_token");
 }
 initAuth();
+
+// Fetch current semester
+async function fetchCurrentSemester() {
+  try {
+    const res = await apiFetch("/semesters/");
+    currentSemester.value = res.find((s: any) => s.is_current) || null;
+  } catch (err) {
+    console.error("Failed to fetch semesters", err);
+  }
+}
 
 // Fetch modules from API
 async function fetchModules() {
@@ -58,17 +69,29 @@ async function fetchModules() {
       headers: { Authorization: `Bearer ${token.value}` },
     });
 
-    // Ensure only needed properties are stored
+    // Filter by current semester
     modules.value = Array.isArray(res)
-        ? res.map((m: any) => ({ code: m.code, name: m.name }))
+        ? res
+            .filter(
+                (m: any) =>
+                    !currentSemester.value ||
+                    m.semester_id === currentSemester.value.id
+            )
+            .map((m: any) => ({
+              code: m.code,
+              name: m.name,
+              semester_id: m.semester_id,
+            }))
         : [];
   } catch (err) {
     console.error("Failed to fetch modules", err);
   }
 }
 
-onMounted(() => {
-  fetchModules();
+// Initialize
+onMounted(async () => {
+  await fetchCurrentSemester();
+  await fetchModules();
 });
 
 function onFileSelect(e: Event) {
@@ -78,7 +101,7 @@ function onFileSelect(e: Event) {
   for (const f of Array.from(target.files)) {
     files.push({
       file: f,
-      subject: modules.value[0]?.code || "", // Default to first module code
+      subject: modules.value[0]?.code || "", // default to first available module
       title: f.name.replace(/\.[^/.]+$/, ""),
       topic: "",
       schedule: false,
@@ -174,7 +197,6 @@ async function uploadAll() {
 
 <template>
   <div class="flex flex-col h-[80vh]">
-    <!-- Sticky file selection -->
     <div
         class="border-2 border-dashed border-input rounded-2xl p-6 sm:p-10 text-center
              hover:bg-accent hover:border-accent-foreground transition cursor-pointer
@@ -192,7 +214,6 @@ async function uploadAll() {
       <p class="text-neutral-500 text-xs sm:text-sm">or click to browse</p>
     </div>
 
-    <!-- Scrollable cards section -->
     <div class="flex-1 overflow-y-auto mt-4 space-y-4 px-1 sm:px-0">
       <div
           v-for="(f, i) in files"
@@ -221,19 +242,17 @@ async function uploadAll() {
                     :key="mod.code"
                     @click="f.subject = mod.code"
                 >
-                  {{ mod.code }}
+                  {{ mod.code }} — {{ mod.name }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <!-- Title -->
           <div class="flex-1">
             <Label>Title</Label>
             <Input v-model="f.title" placeholder="Enter title" />
           </div>
 
-          <!-- Topic -->
           <div class="flex-1">
             <Label>Topic(s)</Label>
             <Input v-model="f.topic" placeholder="Enter topic(s)" />
@@ -242,7 +261,6 @@ async function uploadAll() {
       </div>
     </div>
 
-    <!-- Buttons -->
     <div class="flex flex-col sm:flex-row gap-2 mt-2 bg-background p-2 sm:p-0">
       <Button variant="link" @click="clearAll" class="w-full sm:w-auto">Clear</Button>
       <Button variant="outline" @click="onCancel" class="w-full sm:w-auto">Cancel</Button>

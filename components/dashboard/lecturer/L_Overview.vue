@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { ref, onMounted, reactive, computed, watch, nextTick } from 'vue'
 import * as monaco from 'monaco-editor'
 import { ChevronLeft, ChevronRight, Send, BookOpenText, CodeXml, Brain } from 'lucide-vue-next'
 import { Card, CardContent } from '~/components/ui/card'
@@ -15,7 +15,6 @@ import diamondIcon from '~/assets/flat-icons/diamond.png'
 import FunLoader from '~/components/FunLoader.vue'
 
 const isLoading = ref(true)
-
 const { apiFetch } = useApiFetch()
 
 // --- User info ---
@@ -26,11 +25,9 @@ const currentSemester = ref<any>(null)
 
 // --- Modules & Challenges ---
 const modules = ref<any[]>([])
-const cards = ref<any[]>([]) // challenge progress cards
-
+const cards = ref<any[]>([])
 const challengeOptions = ref<any[]>([])
 const selectedChallengeId = ref<string | null>(null)
-
 const questions = ref<any[]>([])
 const currentQuestionIndex = ref(0)
 
@@ -39,8 +36,33 @@ const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor
 const selectedLanguage = 'python'
 
+// --- Current Week ---
 const currentWeek = ref<number | null>(null)
 
+// --- Testcases ---
+const testcases = ref<{ input: string; expected: string }[]>([])
+
+// --- Computed ---
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
+
+function formatInput(value: string) {
+  return value ? value.trim().split('\n') : []
+}
+
+const challengeStatusLabel = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return { label: 'Closed', color: 'green' }
+    case 'active':
+      return { label: 'Active', color: 'blue' }
+    case 'draft':
+      return { label: 'Not active', color: 'red' }
+    default:
+      return { label: 'Unknown', color: 'gray' }
+  }
+}
+
+// --- Fetches ---
 async function fetchCurrentSemester() {
   try {
     const res = await apiFetch('/semesters/')
@@ -56,11 +78,9 @@ async function fetchCurrentWeek() {
     currentWeek.value = res?.current_week ?? null
   } catch (err) {
     console.error('Failed to fetch current week:', err)
-    currentWeek.value = null
   }
 }
 
-// --- Fetch current lecturer ---
 async function fetchLecturer() {
   try {
     const res = await apiFetch('/admin/me')
@@ -70,7 +90,6 @@ async function fetchLecturer() {
   }
 }
 
-// --- Fetch modules ---
 async function fetchModules() {
   try {
     const res = await apiFetch('/admin/')
@@ -82,11 +101,9 @@ async function fetchModules() {
   }
 }
 
-// --- Fetch challenge progress (cards) ---
 async function fetchCards() {
   try {
     const res = await apiFetch('/analytics/challenge/progress')
-
     const filtered = currentSemester.value
         ? res.filter((c: any) => {
           const module = modules.value.find(m => m.code === c.module_code)
@@ -94,45 +111,39 @@ async function fetchCards() {
         })
         : res
 
-    const sorted = filtered
-        .map((c: any) => {
-          let icons: string[] = []
-          let percentages: number[] = []
+    const sorted = filtered.map((c: any) => {
+      let icons: string[] = []
+      let percentages: number[] = []
 
-          if (c.challenge_type.toLowerCase() === 'weekly') {
-            icons = [bronzeIcon, silverIcon, goldIcon]
-            percentages = [
-              c.difficulty_breakdown?.bronze ?? c.challenge_completion_rate,
-              c.difficulty_breakdown?.silver ?? c.challenge_completion_rate,
-              c.difficulty_breakdown?.gold ?? c.challenge_completion_rate,
-            ]
-          } else if (c.challenge_type.toLowerCase() === 'special') {
-            const tierIconMap: Record<string, string> = {
-              emerald: emeraldIcon,
-              ruby: rubyIcon,
-              diamond: diamondIcon,
-            }
-            const tier = c.challenge_tier?.toLowerCase() || 'emerald'
-            icons = [tierIconMap[tier] || emeraldIcon]
-            percentages = [c.challenge_completion_rate]
-          }
+      if (c.challenge_type.toLowerCase() === 'weekly') {
+        icons = [bronzeIcon, silverIcon, goldIcon]
+        percentages = [
+          c.difficulty_breakdown?.bronze ?? c.challenge_completion_rate,
+          c.difficulty_breakdown?.silver ?? c.challenge_completion_rate,
+          c.difficulty_breakdown?.gold ?? c.challenge_completion_rate,
+        ]
+      } else if (c.challenge_type.toLowerCase() === 'special') {
+        const tierIconMap: Record<string, string> = {
+          emerald: emeraldIcon,
+          ruby: rubyIcon,
+          diamond: diamondIcon,
+        }
+        const tier = c.challenge_tier?.toLowerCase() || 'emerald'
+        icons = [tierIconMap[tier] || emeraldIcon]
+        percentages = [c.challenge_completion_rate]
+      }
 
-          return {
-            id: c.challenge_id,
-            topic: c.challenge_name,
-            module_code: c.module_code,
-            icons,
-            percentages,
-            week_number: c.week_number,
-            participation_rate: c.challenge_participation_rate,
-          }
-        })
-        .sort((a, b) => {
-          if (a.week_number == null && b.week_number == null) return 0
-          if (a.week_number == null) return 1
-          if (b.week_number == null) return -1
-          return a.week_number - b.week_number
-        })
+      return {
+        id: c.challenge_id,
+        topic: c.challenge_name,
+        module_code: c.module_code,
+        icons,
+        percentages,
+        week_number: c.week_number,
+        participation_rate: c.challenge_participation_rate,
+        challenge_status: c.challenge_status,
+      }
+    }).sort((a, b) => (a.week_number ?? 0) - (b.week_number ?? 0))
 
     cards.value = sorted
   } catch (err) {
@@ -140,11 +151,9 @@ async function fetchCards() {
   }
 }
 
-// --- Fetch challenges (dropdown list) ---
 async function fetchChallenges() {
   try {
     const res = await apiFetch('/analytics/challenge/progress')
-
     const filtered = currentSemester.value
         ? res.filter((c: any) => {
           const module = modules.value.find(m => m.code === c.module_code)
@@ -152,21 +161,14 @@ async function fetchChallenges() {
         })
         : res
 
-    const sorted = filtered
+    challengeOptions.value = filtered
         .map((c: any) => ({
           id: c.challenge_id,
           title: c.challenge_name,
           module_code: c.module_code,
           week_number: c.week_number,
         }))
-        .sort((a, b) => {
-          if (a.week_number == null && b.week_number == null) return 0
-          if (a.week_number == null) return 1
-          if (b.week_number == null) return -1
-          return a.week_number - b.week_number
-        })
-
-    challengeOptions.value = sorted
+        .sort((a, b) => (a.week_number ?? 0) - (b.week_number ?? 0))
   } catch (err) {
     console.error('Failed to fetch challenges', err)
   }
@@ -176,17 +178,21 @@ async function fetchQuestionsForChallenge(challengeId: string) {
   try {
     const data = await apiFetch(`/challenges/${challengeId}/questions`)
     questions.value = data.items || []
-    if (!questions.value.length && editor) editor.setValue('')
     currentQuestionIndex.value = 0
-    if (questions.value.length) loadCurrentQuestionIntoEditor()
+    testcases.value = []
+
+    if (questions.value.length) {
+      await nextTick()
+      await loadCurrentQuestionIntoEditor()
+    } else if (editor) {
+      editor.setValue('')
+    }
   } catch (err) {
     console.error('Failed to load questions', err)
     questions.value = []
     if (editor) editor.setValue('')
   }
 }
-
-const testcases = ref<{ input: string; expected: string }[]>([])
 
 async function fetchTestcases(challengeId: string, questionId: string) {
   try {
@@ -201,10 +207,36 @@ async function fetchTestcases(challengeId: string, questionId: string) {
   }
 }
 
-function formatInput(value: string) {
-  return value ? value.trim().split('\n') : []
+// --- Load code into Monaco and fetch testcases ---
+async function loadCurrentQuestionIntoEditor() {
+  if (!editor || !currentQuestion.value || !selectedChallengeId.value) return
+
+  const code = currentQuestion.value.starter_code || ''
+  editor.setValue(code)
+
+  await fetchTestcases(selectedChallengeId.value, currentQuestion.value.id)
 }
 
+// --- Question navigation ---
+function nextQuestion() {
+  if (currentQuestionIndex.value < questions.value.length - 1) currentQuestionIndex.value++
+  loadCurrentQuestionIntoEditor()
+}
+function prevQuestion() {
+  if (currentQuestionIndex.value > 0) currentQuestionIndex.value--
+  loadCurrentQuestionIntoEditor()
+}
+
+// --- Watchers ---
+watch(selectedChallengeId, async (id) => {
+  questions.value = []
+  currentQuestionIndex.value = 0
+  testcases.value = []
+  if (editor) editor.setValue('')
+  if (id) await fetchQuestionsForChallenge(id)
+})
+
+// --- Fetch all data ---
 async function fetchAllData() {
   isLoading.value = true
   try {
@@ -224,8 +256,8 @@ async function fetchAllData() {
 }
 
 // --- Lifecycle ---
-onMounted(() => {
-  fetchAllData()
+onMounted(async () => {
+  await fetchAllData()
 
   if (editorContainer.value) {
     editor = monaco.editor.create(editorContainer.value, {
@@ -237,40 +269,6 @@ onMounted(() => {
     })
   }
 })
-
-watch(selectedChallengeId, (id) => {
-  // ✅ Clear old data before loading new challenge
-  questions.value = []
-  currentQuestionIndex.value = 0
-  if (editor) editor.setValue('')
-
-  if (id) fetchQuestionsForChallenge(id)
-})
-
-// --- Current Question ---
-const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
-
-// --- Navigation ---
-function nextQuestion() {
-  if (currentQuestionIndex.value < questions.value.length - 1) currentQuestionIndex.value++
-  loadCurrentQuestionIntoEditor()
-}
-function prevQuestion() {
-  if (currentQuestionIndex.value > 0) currentQuestionIndex.value--
-  loadCurrentQuestionIntoEditor()
-}
-
-// --- Load code into Monaco ---
-function loadCurrentQuestionIntoEditor() {
-  if (!editor || !currentQuestion.value || !selectedChallengeId.value) return
-
-  // Load starter code
-  const code = currentQuestion.value.starter_code || ''
-  editor.setValue(code)
-
-  // Fetch testcases for this question
-  fetchTestcases(selectedChallengeId.value, currentQuestion.value.id)
-}
 </script>
 
 <template>
@@ -303,8 +301,20 @@ function loadCurrentQuestionIntoEditor() {
             <div class="flex flex-col">
               <span class="text-sm">{{ card.module_code }}</span>
               <span v-if="card.week_number != null" class="text-xs text-neutral-500">
-            Week: {{ card.week_number }}
-          </span>
+                Week: {{ card.week_number }}
+              </span>
+              <span class="flex items-center mt-1 text-xs text-neutral-500">
+              <span
+                  class="w-2 h-2 rounded-full shadow-lg animate-pulse mr-2"
+                  :class="{
+                    'bg-green-500': card.challenge_status === 'completed',
+                    'bg-blue-500': card.challenge_status === 'active',
+                    'bg-red-500': card.challenge_status === 'draft',
+                    'bg-gray-500': !['completed', 'active', 'draft'].includes(card.challenge_status),
+                  }"
+              />
+                {{ challengeStatusLabel(card.challenge_status).label }}
+              </span>
             </div>
             <span
                 class="text-xs sm:text-sm font-semibold text-center mt-2 sm:mt-0 break-words sm:max-w-[50%]"
@@ -438,7 +448,7 @@ function loadCurrentQuestionIntoEditor() {
         </div>
 
         <div class="flex-1 overflow-auto">
-          <div v-if="selectedChallengeId && cards.length > 0">
+          <div v-if="currentQuestion">
             <div v-if="testcases.length > 0" class="space-y-2">
               <div
                   v-for="(tc, idx) in testcases"
