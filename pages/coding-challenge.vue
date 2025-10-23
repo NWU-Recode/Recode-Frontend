@@ -71,6 +71,8 @@ watch(currentQuestionIndex, (newIdx, oldIdx) => {
 
   const codeToLoad = questionCode.value[newIdx] || currentQuestion.value?.starter_code || ''
   editor.setValue(normalizeSourceCode(codeToLoad))
+
+  startTimer()
 })
 
 // --- Helper to normalize source code ---
@@ -136,19 +138,15 @@ async function fetchQuestions() {
     const challengeId = localStorage.getItem('currentChallengeId')
     if (!challengeId) return
 
-    // 1️⃣ Get basic questions list
     const data = await apiFetch(`/challenges/${challengeId}/questions`)
     const basicQuestions = data.items || []
 
-    // 2️⃣ Fetch full bundle for each question
     const fullQuestions = await Promise.all(
         basicQuestions.map(async (q: any) => {
           try {
             const bundle = await apiFetch(
                 `/submissions/challenges/${challengeId}/questions/${q.id}/bundle`
             )
-
-            // Merge bundle info into question object
             return {
               ...q,
               prompt: bundle.prompt,
@@ -181,6 +179,7 @@ async function fetchQuestions() {
     if (fullQuestions.length > 0) {
       currentQuestionIndex.value = 0
       loadCurrentQuestionIntoEditor()
+      startTimer()
     }
   } catch (err) {
     console.error('Failed to load questions', err)

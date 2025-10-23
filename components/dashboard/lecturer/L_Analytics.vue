@@ -39,8 +39,8 @@ let leaderboardChart: Chart | null = null
 async function fetchLeaderboard(moduleCode?: string) {
   try {
     const url = moduleCode
-        ? `/global/leaderboard?module_code=${moduleCode}`
-        : '/global/leaderboard'
+        ? `/analytics/global/leaderboard?module_code=${moduleCode}`
+        : '/analytics/global/leaderboard'
 
     const res = await apiFetch(url)
     leaderboardData.value = res
@@ -57,7 +57,7 @@ async function fetchHighRiskStudents() {
   if (!token.value) return
 
   try {
-    const res = await apiFetch('/students/high-risk', {
+    const res = await apiFetch('/analytics/students/high-risk', {
       headers: { Authorization: `Bearer ${token.value}` },
     })
     // store student_ids in a simple array
@@ -190,7 +190,7 @@ async function fetchChallengeProgress(moduleCode: string) {
 
   try {
     // Fetch all challenges and filter those belonging to the selected module
-    const res = await apiFetch('/challenge/progress', {
+    const res = await apiFetch('/analytics/challenge/progress', {
       headers: { Authorization: `Bearer ${token.value}` },
     })
     const filtered = res.filter((c: any) => c.module_code === moduleCode)
@@ -202,7 +202,7 @@ async function fetchChallengeProgress(moduleCode: string) {
   }
 
   try {
-    const res = await apiFetch(`/challenge-progress?module_code=${moduleCode}`, {
+    const res = await apiFetch(`/analytics/challenge-progress?module_code=${moduleCode}`, {
       headers: { Authorization: `Bearer ${token.value}` },
     })
 

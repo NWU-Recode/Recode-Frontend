@@ -86,7 +86,7 @@ const fetchStudentData = async () => {
     modules.value = filteredModules
 
     // --- Fetch challenges ---
-    const challengesData = await apiFetch('/student/challenges')
+    const challengesData = await apiFetch('/analytics/student/challenges')
 
     // --- Filter challenges by current semester modules ---
     const validModuleCodes = new Set(filteredModules.map((m: any) => m.code))
@@ -217,8 +217,13 @@ onMounted(async () => {
               <span class="flex items-center mt-1 text-xs text-neutral-500">
               <span
                   class="w-2 h-2 rounded-full shadow-lg animate-pulse mr-2"
-                  :class="`bg-${challengeStatusLabel(challenge.challenge_status).color}-500`"
-              ></span>
+                  :class="{
+                    'bg-green-500': challenge.challenge_status === 'completed',
+                    'bg-blue-500': challenge.challenge_status === 'active',
+                    'bg-red-500': challenge.challenge_status === 'draft',
+                    'bg-gray-500': !['completed', 'active', 'draft'].includes(challenge.challenge_status),
+                  }"
+              />
                 {{ challengeStatusLabel(challenge.challenge_status).label }}
               </span>
             </div>

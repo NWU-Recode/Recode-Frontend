@@ -15,6 +15,7 @@ const confirmPassword = ref('')
 
 const isLoading = ref(false)
 const errors = ref<Record<string, string>>({})
+const emailSent = ref(false) // <-- track registration success
 
 const router = useRouter()
 const config = useRuntimeConfig()
@@ -35,11 +36,8 @@ const emailError = computed(() => {
   return ''
 })
 
-
 // Disable button if email invalid or form loading
-const canSubmit = computed(() => {
-  return !isLoading.value && !emailError.value
-})
+const canSubmit = computed(() => !isLoading.value && !emailError.value)
 
 async function onSubmit(event: Event) {
   event.preventDefault()
@@ -66,26 +64,29 @@ async function onSubmit(event: Event) {
     // Register user
     await $fetch(`${config.public.apiBase}/auth/register`, {
       method: 'POST',
-      body: { full_name: full_name.value, email: email.value, student_number: student_number.value, password: password.value },
+      body: {
+        full_name: full_name.value,
+        email: email.value,
+        student_number: student_number.value,
+        password: password.value,
+      },
       credentials: 'include',
     })
 
-    // Fetch user profile into auth store
+    // Registration succeeded, show email confirmation message
+    emailSent.value = true
+
+    // Optional: fetch user profile into auth store
     await auth.fetchUser()
 
-    // Redirect to login
-    router.push('/login')
-  }
-  catch (err: any) {
+  } catch (err: any) {
     console.error('Registration error:', err)
     if (err?.data?.detail) {
       errors.value.general = err.data.detail
-    }
-    else {
+    } else {
       errors.value.general = 'An unexpected error occurred'
     }
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }
@@ -98,7 +99,7 @@ watch(email, () => {
 
 <template>
   <div :class="cn('grid gap-6', $attrs.class ?? '')">
-    <form @submit="onSubmit">
+    <form @submit="onSubmit" v-if="!emailSent">
       <div class="grid gap-4">
         <!-- Name -->
         <div class="grid gap-2">
@@ -128,9 +129,7 @@ watch(email, () => {
               auto-correct="off"
               :disabled="isLoading"
           />
-          <p v-if="emailError" class="text-sm text-red-500">
-            {{ emailError }}
-          </p>
+          <p v-if="emailError" class="text-sm text-red-500">{{ emailError }}</p>
         </div>
 
         <!-- Student number -->
@@ -157,9 +156,7 @@ watch(email, () => {
         <div class="grid gap-2">
           <Label for="confirm-password">Confirm Password</Label>
           <PasswordInput id="confirm-password" v-model="confirmPassword" />
-          <p v-if="errors.confirmPassword" class="text-sm text-red-500">
-            {{ errors.confirmPassword }}
-          </p>
+          <p v-if="errors.confirmPassword" class="text-sm text-red-500">{{ errors.confirmPassword }}</p>
         </div>
 
         <!-- Submit Button -->
@@ -168,10 +165,14 @@ watch(email, () => {
           Sign Up with Email
         </Button>
 
-        <p v-if="errors.general" class="mt-2 text-sm text-red-500">
-          {{ errors.general }}
-        </p>
+        <p v-if="errors.general" class="mt-2 text-sm text-red-500">{{ errors.general }}</p>
       </div>
     </form>
+
+    <!-- Success message -->
+    <div v-else class="text-center p-6 border rounded-lg border-green-400 text-green-400">
+      Registration successful!<br />
+      Please check your email to confirm your account.
+    </div>
   </div>
 </template>

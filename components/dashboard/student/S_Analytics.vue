@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
-import { Chart, registerables } from 'chart.js'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { Card, CardContent } from "~/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~/components/ui/table";
 import { useApiFetch } from '@/composables/useApiFetch'
@@ -11,15 +10,17 @@ import rubyIcon from '~/assets/flat-icons/ruby.png'
 import emeraldIcon from '~/assets/flat-icons/emerald.png'
 import diamondIcon from '~/assets/flat-icons/diamond.png'
 import FunLoader from '~/components/FunLoader.vue'
+import EloDistribution from "~/components/dashboard/student/analytics/EloDistribution.vue";
+import PassFailAttempts from "~/components/dashboard/student/analytics/PassFailAttempts.vue";
+import TierDistribution from "~/components/dashboard/student/analytics/TierDistribution.vue";
+import AttemptsOverTime from "~/components/dashboard/student/analytics/AttemptsOverTime.vue";
+import CumulativeAttempts from "~/components/dashboard/student/analytics/CumulativeAttempts.vue";
+import PassRate from "~/components/dashboard/student/analytics/PassRate.vue";
 
 const loading = ref(true)
-
-// register Chart.js components
-Chart.register(...registerables)
-
 const { apiFetch } = useApiFetch()
 
-// Badge icons mapping
+// Badge icons
 const badgeIcons: Record<string, string> = {
   bronze: bronzeIcon,
   silver: silverIcon,
@@ -41,36 +42,29 @@ const badges = ref<Record<string, number>>({
 
 // Leaderboard data
 const leaderboard = ref<any[]>([])
-let leaderboardChart: Chart | null = null
 
-// Fetch badges for current student
-// --- Fetch badges for the logged-in student ---
-async function fetchBadges() {
+// Fetch badges
+const fetchBadges = async () => {
   try {
-    // Get all modules visible to this student
-    const modulesRes: Array<{ code: string }> = await apiFetch('/admin/')
-    const moduleCodes: string[] = modulesRes.map((m) => m.code)
+    // Fetch current semester first
+    const semesters: any[] = await apiFetch('/semesters/')
+    const currentSemester = semesters.find(s => s.is_current)
+    if (!currentSemester) return
 
-    // Reset counts
-    badges.value = {
-      bronze: 0,
-      silver: 0,
-      gold: 0,
-      ruby: 0,
-      emerald: 0,
-      diamond: 0,
-    }
+    // Fetch modules for student
+    const modulesRes: Array<{ code: string; semester_id: string }> = await apiFetch('/admin/')
+    const currentModules = modulesRes.filter(m => m.semester_id === currentSemester.id)
+    const moduleCodes = currentModules.map(m => m.code)
 
-    // Fetch badges for each module
+    badges.value = { bronze: 0, silver: 0, gold: 0, ruby: 0, emerald: 0, diamond: 0 }
+
     for (const moduleCode of moduleCodes) {
       const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch(
-          `/badges?module_code=${moduleCode}`
+          `/analytics/badges?module_code=${moduleCode}`
       )
-      res.forEach((b) => {
+      res.forEach(b => {
         const type = b.badge_type.toLowerCase()
-        if (badges.value[type] !== undefined) {
-          badges.value[type] += b.badge_count
-        }
+        if (badges.value[type] !== undefined) badges.value[type] += b.badge_count
       })
     }
   } catch (err) {
@@ -78,21 +72,18 @@ async function fetchBadges() {
   }
 }
 
-// Fetch global leaderboard
+// Fetch leaderboard
 const fetchLeaderboard = async () => {
   try {
-    const data = await apiFetch('/global/leaderboard')
-    // Sort by global_rank ascending
+    const data = await apiFetch('/analytics/global/leaderboard')
     leaderboard.value = data.sort((a, b) => a.global_rank - b.global_rank)
   } catch (err) {
     console.error('Failed to fetch leaderboard:', err)
   }
 }
 
-// Reactive variable for the current student's title
-const title_name = ref('');
-
-// Fetch current user profile
+// Fetch profile
+const title_name = ref('')
 const fetchProfile = async () => {
   try {
     const profile = await apiFetch('/profiles/me')
@@ -102,66 +93,12 @@ const fetchProfile = async () => {
   }
 }
 
-// --- Render Chart.js horizontal bar ---
-function renderLeaderboardChart() {
-  const ctx = document.getElementById('leaderboardChart') as HTMLCanvasElement
-  if (!ctx) return
-
-  // destroy previous instance to avoid duplicates
-  if (leaderboardChart) leaderboardChart.destroy()
-
-  leaderboardChart = new Chart(ctx, {
-    type: 'bar', // we'll flip to horizontal in options
-    data: {
-      labels: leaderboard.value.map(
-        (s: any) => `${s.full_name} (#${s.global_rank})`
-      ),
-      datasets: [
-        {
-          label: 'Current ELO',
-          data: leaderboard.value.map((s: any) => s.current_elo),
-          backgroundColor: 'rgba(54, 162, 235, 0.7)',
-          borderColor: 'rgb(115,126,138)',
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      indexAxis: 'y', // horizontal bars
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: {
-          display: true,
-          text: 'Global Leaderboard (ELO)',
-          font: { size: 16 },
-        },
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          title: { display: true, text: 'Current ELO' },
-        },
-        y: {
-          ticks: { autoSkip: false },
-        },
-      },
-    },
-  })
-}
-
-// re-render chart whenever leaderboard updates
-watch(leaderboard, () => {
-  nextTick(() => renderLeaderboardChart())
-})
-
-// Compute podium + rest
+// Podium setup
 const podium = computed(() => leaderboard.value.slice(0, 3))
 const restStudents = computed(() => leaderboard.value.slice(3))
 
-const podiumHeights = ref<number[]>([0, 0, 0])
+const podiumHeights = ref<number[]>([0,0,0])
 const maxPodiumHeight = ref(0)
-
 const setPodiumHeight = () => {
   nextTick(() => {
     const cards = document.querySelectorAll<HTMLDivElement>('.podium-card')
@@ -169,6 +106,18 @@ const setPodiumHeight = () => {
     maxPodiumHeight.value = Math.max(...podiumHeights.value)
   })
 }
+
+// Tabs
+const tabs =
+    [
+      'ELO Distribution',
+      'Tier Distribution',
+      'Attempts Over Time',
+      'Cumulative Attempts',
+      'Pass vs Fail Attempts',
+      'Pass Rate'
+    ]
+const activeTab = ref(tabs[0])
 
 onMounted(async () => {
   loading.value = true
@@ -179,39 +128,70 @@ onMounted(async () => {
       fetchLeaderboard(),
     ])
   } catch (err) {
-    console.error('Failed to fetch student leaderboard data:', err)
+    console.error('Failed to fetch student analytics data:', err)
   } finally {
     loading.value = false
-    nextTick(() => {
-      renderLeaderboardChart()
-      setPodiumHeight()
-    })
+    nextTick(setPodiumHeight)
   }
 })
 
-watch(podium, () => {
-  setPodiumHeight()
-})
-
+watch(podium, () => setPodiumHeight())
 </script>
 
 <template>
   <div>
-    <!-- FunLoader while fetching data -->
     <FunLoader v-if="loading" />
 
-    <!-- Main content after loading -->
     <div v-else class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
-      <!-- Graph placeholder -->
-      <div class="mt-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow">
-        <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          <canvas id="leaderboardChart"></canvas>
+      <!-- Charts with tabs -->
+      <div class="rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 shadow">
+        <div>
+          <!-- Tabs -->
+          <div class="flex border-b border-neutral-300 dark:border-neutral-700 mb-4">
+            <button
+                v-for="tab in tabs"
+                :key="tab"
+                @click="activeTab = tab"
+                :class="[
+                'px-4 py-2 font-medium text-sm transition-colors',
+                activeTab === tab
+                  ? 'border-b-2 border-purple-400 text-purple-400'
+                  : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+              ]"
+            >
+              {{ tab }}
+            </button>
+          </div>
+
+          <!-- Chart Display -->
+          <div v-if="activeTab === 'ELO Distribution'">
+            <EloDistribution />
+          </div>
+
+          <div v-else-if="activeTab === 'Tier Distribution'">
+            <TierDistribution />
+          </div>
+
+          <div v-else-if="activeTab === 'Attempts Over Time'">
+            <AttemptsOverTime />
+          </div>
+
+          <div v-else-if="activeTab === 'Cumulative Attempts'">
+            <CumulativeAttempts />
+          </div>
+
+          <div v-else-if="activeTab === 'Pass vs Fail Attempts'">
+            <PassFailAttempts />
+          </div>
+
+          <div v-else-if="activeTab === 'Pass Rate'">
+            <PassRate />
+          </div>
         </div>
       </div>
 
-      <!-- Badges + Awarded Title -->
+      <!-- Badges + Title -->
       <div class="grid gap-6 lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 mt-6">
-        <!-- Badges Card -->
         <Card class="h-auto sm:h-40 p-2 sm:p-6 flex justify-center items-center">
           <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-6 w-full">
             <div v-for="(icon, key) in badgeIcons" :key="key" class="flex flex-col items-center">
@@ -221,7 +201,6 @@ watch(podium, () => {
           </div>
         </Card>
 
-        <!-- Awarded Title Card -->
         <Card class="h-40 sm:h-auto p-4 sm:p-6 flex items-center justify-center">
           <CardContent class="h-full flex flex-col justify-center items-center">
             <span class="text-sm">Awarded Title</span>
@@ -230,64 +209,32 @@ watch(podium, () => {
         </Card>
       </div>
 
-      <!-- PODIUMS -->
+      <!-- Podium -->
       <div v-if="podium.length >= 3" class="mt-8 flex flex-col sm:flex-row sm:justify-center sm:items-end gap-2 sm:gap-4">
-
-        <!-- 1st place -->
+        <!-- Podium Cards -->
         <div
-            class="podium-card rounded-lg bg-yellow-100 dark:bg-yellow-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative self-center"
+            v-for="(place, index) in podium"
+            :key="index"
+            class="podium-card rounded-lg p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative"
+            :class="{
+            'bg-yellow-100 dark:bg-yellow-900': index === 0,
+            'bg-neutral-100 dark:bg-neutral-900': index !== 0
+          }"
             :style="{ minHeight: maxPodiumHeight + 'px' }"
         >
           <div class="flex flex-col items-center">
-            <span class="text-sm font-semibold mb-2">1st</span>
-            <img :src="goldIcon" class="w-16 sm:w-20 h-16 sm:h-20" />
+            <span class="text-sm font-semibold mb-1">{{ index + 1 }}{{ index === 0 ? 'st' : index === 1 ? 'nd' : 'rd' }}</span>
+            <img :src="[goldIcon, silverIcon, bronzeIcon][index]" class="w-12 sm:w-16 h-12 sm:h-16" />
           </div>
           <div class="flex flex-col items-center mt-2">
-            <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[0].title_name }}</span>
-            <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[0].full_name }}</span>
-            <span class="text-xs sm:text-sm text-neutral-500">{{ podium[0].current_elo }} pts</span>
+            <span class="text-xs sm:text-sm text-neutral-500 text-center">{{ place.title_name }}</span>
+            <span class="font-semibold text-center text-sm sm:text-base">{{ place.full_name }}</span>
+            <span class="text-xs sm:text-sm text-neutral-500">{{ place.current_elo }} pts</span>
           </div>
-        </div>
-
-        <!-- 2nd and 3rd place -->
-        <div class="flex justify-center gap-4 w-full sm:w-auto mt-4 sm:mt-0">
-
-          <!-- 2nd -->
-          <div
-              class="podium-card rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative"
-              :style="{ minHeight: maxPodiumHeight + 'px' }"
-          >
-            <div class="flex flex-col items-center">
-              <span class="text-sm font-semibold mb-1">2nd</span>
-              <img :src="silverIcon" class="w-12 sm:w-16 h-12 sm:h-16" />
-            </div>
-            <div class="flex flex-col items-center mt-2">
-              <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[1].title_name }}</span>
-              <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[1].full_name }}</span>
-              <span class="text-xs sm:text-sm text-neutral-500">{{ podium[1].current_elo }} pts</span>
-            </div>
-          </div>
-
-          <!-- 3rd -->
-          <div
-              class="podium-card rounded-lg bg-neutral-100 dark:bg-neutral-900 p-4 flex flex-col shadow w-36 sm:w-40 items-center justify-between relative"
-              :style="{ minHeight: maxPodiumHeight + 'px' }"
-          >
-            <div class="flex flex-col items-center">
-              <span class="text-sm font-semibold mb-1">3rd</span>
-              <img :src="bronzeIcon" class="w-12 sm:w-16 h-12 sm:h-16" />
-            </div>
-            <div class="flex flex-col items-center mt-2">
-              <span class="text-xs sm:text-sm text-neutral-500 text-center break-words">{{ podium[2].title_name }}</span>
-              <span class="font-semibold text-center text-sm sm:text-base break-words">{{ podium[2].full_name }}</span>
-              <span class="text-xs sm:text-sm text-neutral-500">{{ podium[2].current_elo }} pts</span>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      <!-- Leaderboard Table -->
+      <!-- Leaderboard -->
       <div class="mt-8 overflow-x-auto">
         <div class="min-w-[400px] sm:min-w-full">
           <Table>
