@@ -139,12 +139,12 @@ const avgCompletionTime = computed(() => selectedChallenge?.value?.avg_completio
 
 // --- Badge image mapping ---
 const badgeImages: Record<string, string> = {
-  Bronze,
-  Silver,
-  Gold,
-  Ruby,
-  Emerald,
-  Diamond,
+  bronze: Bronze,
+  silver: Silver,
+  gold: Gold,
+  ruby: Ruby,
+  emerald: Emerald,
+  diamond: Diamond,
 }
 
 const semesters = ref<any[]>([])
@@ -208,7 +208,7 @@ async function fetchChallengeProgress(moduleCode: string) {
 
     const studentMap: Record<string, any> = {}
     res.forEach((entry: any) => {
-      const badge = entry.highest_badge || 'none'
+      const badge = entry.highest_badge?.toLowerCase() || 'none'
 
       if (!studentMap[entry.student_number]) {
         studentMap[entry.student_number] = {
