@@ -30,7 +30,7 @@ async function fetchSemesters() {
 // Fetch all modules
 async function fetchModules() {
   try {
-    modules.value = await apiFetch('/admin/modules')
+    modules.value = await apiFetch('/analytics/admin/modules')
   } catch (err) {
     console.error('Failed to fetch modules', err)
   }

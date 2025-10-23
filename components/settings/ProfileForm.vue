@@ -75,16 +75,27 @@ const badges = ref<Record<string, number>>({
 // --- Fetch badges ---
 async function fetchBadgesForStudent() {
   try {
-    const modulesRes: Array<{ code: string }> = await apiFetch('/admin/')
-    const moduleCodes: string[] = modulesRes.map((m) => m.code)
+    // 1. Fetch all semesters and get the current one
+    const semesters: any[] = await apiFetch('/semesters/')
+    const currentSemester = semesters.find(s => s.is_current)
+    if (!currentSemester) return
 
+    // 2. Fetch modules for the student
+    const modulesRes: Array<{ code: string; semester_id: string }> = await apiFetch('/admin/')
+
+    // 3. Filter modules to only include those in the current semester
+    const currentModules = modulesRes.filter(m => m.semester_id === currentSemester.id)
+    const moduleCodes = currentModules.map(m => m.code)
+
+    // 4. Reset badges
     badges.value = { bronze: 0, silver: 0, gold: 0, ruby: 0, emerald: 0, diamond: 0 }
 
+    // 5. Fetch badges for each module in the current semester
     for (const moduleCode of moduleCodes) {
       const res: Array<{ badge_type: string; badge_count: number }> = await apiFetch(
-          `/badges?module_code=${moduleCode}`
+          `/analytics/badges?module_code=${moduleCode}`
       )
-      res.forEach((b) => {
+      res.forEach(b => {
         const type = b.badge_type.toLowerCase()
         if (badges.value[type] !== undefined) {
           badges.value[type] += b.badge_count

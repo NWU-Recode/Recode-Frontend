@@ -85,7 +85,7 @@ async function fetchModules() {
 // --- Fetch challenge progress (cards) ---
 async function fetchCards() {
   try {
-    const res = await apiFetch('/challenge/progress')
+    const res = await apiFetch('/analytics/challenge/progress')
 
     const filtered = currentSemester.value
         ? res.filter((c: any) => {
@@ -143,7 +143,7 @@ async function fetchCards() {
 // --- Fetch challenges (dropdown list) ---
 async function fetchChallenges() {
   try {
-    const res = await apiFetch('/challenge/progress')
+    const res = await apiFetch('/analytics/challenge/progress')
 
     const filtered = currentSemester.value
         ? res.filter((c: any) => {
