@@ -37,8 +37,8 @@ const renderChart = () => {
 
   // Count each tier
   const tierCounts: Record<string, number> = {}
-  analyticsData.value.recent.forEach((r: any) => {
-    const tier = r.additional_files.tier || 'unknown'
+  analyticsData.value.recent_submissions.forEach((submission: any) => {
+    const tier = submission.additional_files?.tier || 'unknown'
     tierCounts[tier] = (tierCounts[tier] || 0) + 1
   })
 
@@ -64,7 +64,7 @@ const renderChart = () => {
       responsive: true,
       plugins: {
         legend: { position: 'right' },
-        title: { display: true, text: 'Tier Distribution of Recent Attempts' },
+        title: { display: true, text: 'Tier Distribution of Recent Submissions' },
       },
     },
   })

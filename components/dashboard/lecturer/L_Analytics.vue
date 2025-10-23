@@ -270,15 +270,21 @@ function renderChallengeChart() {
       labels: data.map((c: any) => c.challenge_name),
       datasets: [
         {
-          label: 'Students Completed',
-          data: data.map((c: any) => c.students_completed || 0),
+          label: 'Student Attempts',
+          data: data.map((c: any) => c.total_question_attempts || 0),
           backgroundColor: [
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(255, 206, 86, 0.7)',
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(153, 102, 255, 0.7)',
-            'rgba(255, 159, 64, 0.7)',
+            'rgba(255, 99, 132, 0.7)',   // red
+            'rgba(54, 162, 235, 0.7)',   // blue
+            'rgba(255, 206, 86, 0.7)',   // yellow
+            'rgba(75, 192, 192, 0.7)',   // teal
+            'rgba(153, 102, 255, 0.7)',  // purple
+            'rgba(255, 159, 64, 0.7)',   // orange
+            'rgba(199, 199, 199, 0.7)',  // grey
+            'rgba(255, 99, 255, 0.7)',   // pink
+            'rgba(54, 235, 162, 0.7)',   // greenish-cyan
+            'rgba(255, 206, 206, 0.7)',  // light red
+            'rgba(75, 75, 192, 0.7)',    // dark blue
+            'rgba(153, 255, 102, 0.7)',  // light green
           ],
           borderWidth: 0,
         },
@@ -301,9 +307,9 @@ function renderChallengeChart() {
         title: {
           display: true,
           text:
-              data.every((c: any) => c.students_completed === 0)
+              data.every((c: any) => c.total_question_attempts === 0)
                   ? `No submissions yet for ${selectedModuleCode.value}`
-                  : `Challenge Completion for ${selectedModuleCode.value}`,
+                  : `Challenge Attempts for ${selectedModuleCode.value}`,
           padding: {
             bottom: 20
           },
@@ -313,8 +319,8 @@ function renderChallengeChart() {
             label: (context) => {
               const value = context.parsed
               return value === 0
-                  ? '0 students completed (yet)'
-                  : `${value} students completed`
+                  ? '0 attempts (yet)'
+                  : `${value} attempts`
             },
           },
         },

@@ -6,11 +6,9 @@ import { useApiFetch } from '@/composables/useApiFetch'
 Chart.register(...registerables)
 
 const { apiFetch } = useApiFetch()
-
 const analyticsData = ref<any>(null)
 let stackedChart: Chart | null = null
 
-// Fetch analytics
 const fetchAnalytics = async () => {
   try {
     analyticsData.value = await apiFetch('/student/me/analytics')
@@ -21,23 +19,22 @@ const fetchAnalytics = async () => {
   }
 }
 
-// Render stacked bar chart
 const renderChart = () => {
   const ctx = document.getElementById('passFailChart') as HTMLCanvasElement
   if (!ctx || !analyticsData.value) return
 
-  // Prepare last 10 attempts
-  const recentAttempts = analyticsData.value.recent
-      .slice(-10) // last 10 attempts
+  // Last 10 submissions
+  const recent = analyticsData.value.recent_submissions
+      .slice(-10)
       .map((r: any, idx: number) => ({
         attempt: idx + 1,
         passed: r.additional_files.tests_passed === r.additional_files.tests_total ? 1 : 0,
         failed: r.additional_files.tests_passed < r.additional_files.tests_total ? 1 : 0,
       }))
 
-  const labels = recentAttempts.map((r: any) => `Attempt ${r.attempt}`)
-  const passedData = recentAttempts.map((r: any) => r.passed)
-  const failedData = recentAttempts.map((r: any) => r.failed)
+  const labels = recent.map(r => `Attempt ${r.attempt}`)
+  const passedData = recent.map(r => r.passed)
+  const failedData = recent.map(r => r.failed)
 
   if (stackedChart) stackedChart.destroy()
 

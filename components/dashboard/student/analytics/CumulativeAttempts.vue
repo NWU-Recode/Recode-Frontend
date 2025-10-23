@@ -14,7 +14,7 @@ let stackedAreaChart: Chart | null = null
 const fetchAnalytics = async () => {
   try {
     const data = await apiFetch('/student/me/analytics')
-    analyticsData.value = data.recent || []
+    analyticsData.value = data.recent_submissions || []
   } catch (err) {
     console.error('Failed to fetch analytics:', err)
   }
@@ -29,8 +29,8 @@ const renderChart = () => {
   const sorted = analyticsData.value
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-  // Cumulative counts
-  let cumulative: Record<string, number> = { bronze: 0, silver: 0, gold: 0, ruby: 0, emerald: 0, diamond: 0 }
+  // Cumulative counts per tier
+  const cumulative: Record<string, number> = { bronze: 0, silver: 0, gold: 0, ruby: 0, emerald: 0, diamond: 0 }
   const labels: string[] = []
   const datasets: Record<string, number[]> = {
     bronze: [],
@@ -42,10 +42,10 @@ const renderChart = () => {
   }
 
   for (const sub of sorted) {
-    const tier = sub.additional_files.tier.toLowerCase()
+    const tier = sub.additional_files?.tier?.toLowerCase() || 'bronze'
     if (cumulative[tier] !== undefined) cumulative[tier] += 1
 
-    labels.push(new Date(sub.created_at).toISOString().split('T')[0]) // YYYY-MM-DD
+    labels.push(new Date(sub.created_at).toISOString().split('T')[0])
     for (const t of Object.keys(cumulative)) {
       datasets[t].push(cumulative[t])
     }
